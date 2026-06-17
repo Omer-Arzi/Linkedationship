@@ -42,8 +42,7 @@ const theme = createTheme({
   },
 })
 
-// Export the raw CSS variable values for use in sx props / inline styles
-export const C = {
+export const Colors = {
   bg:        '#E8EFF7',
   bgSurface: '#FFFFFF',
   bgNav:     '#16304F',
@@ -71,6 +70,8 @@ export const C = {
   logBlue:   '#5BA3E0',
   logCyan:   '#3DB8C8',
   logSystem: '#2A6A8A',
-}
+} as const
+
+export type ColorPalette = typeof Colors
 
 export default theme

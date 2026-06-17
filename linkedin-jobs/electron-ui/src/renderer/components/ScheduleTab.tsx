@@ -1,18 +1,49 @@
 import React, { useState, useEffect } from 'react'
 import Box from '@mui/material/Box'
-import { C } from '../theme'
+import { Colors } from '../theme'
+import { DAY_NAMES, DEFAULT_DAYS } from '../constants'
+import type { ScheduleSettings, StatusInfo } from '../types'
 
-const DAY_NAMES    = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const DEFAULT_DAYS = [0, 1, 2, 3, 4]  // Sun–Thu
+// ── Validators ────────────────────────────────────────────────────────────────
+
+function parseHour(val: string): number | null {
+  const n = parseInt(val.trim(), 10)
+  return (!isNaN(n) && n >= 0 && n <= 23) ? n : null
+}
+
+function parseMinute(val: string): number | null {
+  const n = parseInt(val.trim(), 10)
+  return (!isNaN(n) && n >= 0 && n <= 59) ? n : null
+}
+
+function deriveStatus(enabled: boolean, days: number[], hour: string, minute: string): StatusInfo {
+  if (!enabled) return { text: '● Schedule inactive', color: Colors.muted }
+
+  const h = parseHour(hour)
+  const m = parseMinute(minute)
+
+  if (h === null || m === null) {
+    return { text: '⚠ Enter a valid time (hour 0–23, minute 0–59)', color: Colors.red }
+  }
+  if (days.length === 0) {
+    return { text: '⚠ Select at least one day', color: Colors.red }
+  }
+
+  const time    = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  const dayList = [...days].sort((a, b) => a - b).map(d => DAY_NAMES[d]).join(', ')
+  return { text: `● Active — ${dayList} at ${time}`, color: Colors.blue }
+}
 
 // ── Toggle switch ─────────────────────────────────────────────────────────────
 
-function Toggle({ checked, onChange }) {
+interface ToggleProps {
+  checked: boolean
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}
+
+function Toggle({ checked, onChange }: ToggleProps) {
   return (
-    <Box
-      component="label"
-      sx={{ position: 'relative', flexShrink: 0, cursor: 'pointer' }}
-    >
+    <Box component="label" sx={{ position: 'relative', flexShrink: 0, cursor: 'pointer' }}>
       <Box
         component="input"
         type="checkbox"
@@ -22,7 +53,7 @@ function Toggle({ checked, onChange }) {
       />
       <Box sx={{
         display: 'block', width: '40px', height: '24px', borderRadius: '12px',
-        background: checked ? C.blue : C.border,
+        background: checked ? Colors.blue : Colors.border,
         transition: 'background .2s', position: 'relative',
       }}>
         <Box sx={{
@@ -39,56 +70,51 @@ function Toggle({ checked, onChange }) {
 
 // ── Setting row ───────────────────────────────────────────────────────────────
 
-function SettingRow({ label, desc, right, disabled }) {
+interface SettingRowProps {
+  label: string
+  desc?: string
+  right?: React.ReactNode
+  disabled?: boolean
+}
+
+function SettingRow({ label, desc, right, disabled }: SettingRowProps) {
   return (
     <Box sx={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       gap: '24px', padding: '16px 20px',
-      borderBottom: `1px solid ${C.border}`,
+      borderBottom: `1px solid ${Colors.border}`,
       opacity: disabled ? 0.4 : 1,
       pointerEvents: disabled ? 'none' : 'auto',
       transition: 'opacity .2s',
       '&:last-child': { borderBottom: 'none' },
     }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
-        <Box sx={{ fontSize: '13px', fontWeight: 600, color: C.text }}>{label}</Box>
-        {desc && <Box sx={{ fontSize: '12px', color: C.muted, lineHeight: 1.4 }}>{desc}</Box>}
+        <Box sx={{ fontSize: '13px', fontWeight: 600, color: Colors.text }}>{label}</Box>
+        {desc && <Box sx={{ fontSize: '12px', color: Colors.muted, lineHeight: 1.4 }}>{desc}</Box>}
       </Box>
       {right}
     </Box>
   )
 }
 
-// ── Validators ────────────────────────────────────────────────────────────────
-
-function parseHour(val) {
-  const n = parseInt(String(val).trim(), 10)
-  return (!isNaN(n) && n >= 0 && n <= 23) ? n : null
-}
-
-function parseMinute(val) {
-  const n = parseInt(String(val).trim(), 10)
-  return (!isNaN(n) && n >= 0 && n <= 59) ? n : null
-}
-
 // ── ScheduleTab ───────────────────────────────────────────────────────────────
 
 export default function ScheduleTab() {
-  const [enabled,      setEnabled]      = useState(false)
-  const [days,         setDays]         = useState(DEFAULT_DAYS)
-  const [hour,         setHour]         = useState('08')
-  const [minute,       setMinute]       = useState('00')
-  const [hourError,    setHourError]    = useState(false)
-  const [minuteError,  setMinuteError]  = useState(false)
-  const [confirm,      setConfirm]      = useState(true)
-  const [apiKey,       setApiKey]       = useState('')
-  const [showKey,      setShowKey]      = useState(false)
-  const [saving,       setSaving]       = useState(false)
-  const [statusText,   setStatusText]   = useState('● Schedule inactive')
-  const [statusColor,  setStatusColor]  = useState(C.muted)
+  const [enabled,     setEnabled]     = useState(false)
+  const [days,        setDays]        = useState<number[]>(DEFAULT_DAYS)
+  const [hour,        setHour]        = useState('08')
+  const [minute,      setMinute]      = useState('00')
+  const [hourError,   setHourError]   = useState(false)
+  const [minuteError, setMinuteError] = useState(false)
+  const [confirm,     setConfirm]     = useState(true)
+  const [apiKey,      setApiKey]      = useState('')
+  const [showKey,     setShowKey]     = useState(false)
+  const [saving,      setSaving]      = useState(false)
+  // Replaces statusText/statusColor state: null means show the derived status
+  const [saveFeedback, setSaveFeedback] = useState<StatusInfo | null>(null)
 
   useEffect(() => {
-    window.api.loadScheduleSettings().then((s) => {
+    window.api.loadScheduleSettings().then((s: ScheduleSettings) => {
       setEnabled(!!s.enabled)
       setHour(String(s.hour   ?? 8).padStart(2, '0'))
       setMinute(String(s.minute ?? 0).padStart(2, '0'))
@@ -98,30 +124,7 @@ export default function ScheduleTab() {
     })
   }, [])
 
-  // Derive status line whenever relevant state changes
-  useEffect(() => {
-    const h = parseHour(hour)
-    const m = parseMinute(minute)
-    const valid = h !== null && m !== null
-
-    if (enabled && valid && days.length > 0) {
-      const time    = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
-      const dayList = [...days].sort((a,b)=>a-b).map(d => DAY_NAMES[d]).join(', ')
-      setStatusText(`● Active — ${dayList} at ${time}`)
-      setStatusColor(C.blue)
-    } else if (enabled && !valid) {
-      setStatusText('⚠ Enter a valid time (hour 0–23, minute 0–59)')
-      setStatusColor(C.red)
-    } else if (enabled && days.length === 0) {
-      setStatusText('⚠ Select at least one day')
-      setStatusColor(C.red)
-    } else {
-      setStatusText('● Schedule inactive')
-      setStatusColor(C.muted)
-    }
-  }, [enabled, days, hour, minute])
-
-  function toggleDay(d) {
+  function toggleDay(d: number) {
     setDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])
   }
 
@@ -133,14 +136,13 @@ export default function ScheduleTab() {
       if (h === null) { setHourError(true); return }
       if (m === null) { setMinuteError(true); return }
       if (days.length === 0) {
-        setStatusText('⚠ Select at least one day')
-        setStatusColor(C.red)
+        setSaveFeedback({ text: '⚠ Select at least one day', color: Colors.red })
         return
       }
     }
 
     setSaving(true)
-    const settings = {
+    const settings: ScheduleSettings = {
       enabled,
       days,
       hour:                h ?? 8,
@@ -152,43 +154,43 @@ export default function ScheduleTab() {
     setSaving(false)
 
     if (result.ok) {
-      const time    = `${String(settings.hour).padStart(2,'0')}:${String(settings.minute).padStart(2,'0')}`
-      const dayList = [...days].sort((a,b)=>a-b).map(d => DAY_NAMES[d]).join(', ')
-      setStatusText(settings.enabled ? `✓ Applied — ${dayList} at ${time}` : '✓ Applied — schedule inactive')
-      setStatusColor(C.green)
-      setTimeout(() => {
-        // re-derive status
-        setStatusColor(undefined)  // triggers useEffect
-      }, 2500)
+      const time    = `${String(settings.hour).padStart(2, '0')}:${String(settings.minute).padStart(2, '0')}`
+      const dayList = [...days].sort((a, b) => a - b).map(d => DAY_NAMES[d]).join(', ')
+      setSaveFeedback({
+        text:  settings.enabled ? `✓ Applied — ${dayList} at ${time}` : '✓ Applied — schedule inactive',
+        color: Colors.green,
+      })
+      setTimeout(() => setSaveFeedback(null), 2500)
     } else {
-      setStatusText(`✗ Error: ${result.error}`)
-      setStatusColor(C.red)
+      setSaveFeedback({ text: `✗ Error: ${result.error ?? 'Unknown error'}`, color: Colors.red })
     }
   }
 
-  const inputSx = (hasError) => ({
+  const inputSx = (hasError: boolean) => ({
     width: '48px', height: '32px', padding: '0 10px',
-    border: `1px solid ${hasError ? C.red : C.border}`, borderRadius: '8px',
-    background: C.bg, color: C.text,
+    border: `1px solid ${hasError ? Colors.red : Colors.border}`, borderRadius: '8px',
+    background: Colors.bg, color: Colors.text,
     fontSize: '14px', fontWeight: 600, textAlign: 'center',
     outline: 'none', transition: 'border-color .15s, box-shadow .15s',
     boxShadow: hasError ? `0 0 0 3px rgba(204,16,22,.15)` : 'none',
     '&:focus': {
-      borderColor: hasError ? C.red : C.blue,
+      borderColor: hasError ? Colors.red : Colors.blue,
       boxShadow: hasError ? '0 0 0 3px rgba(204,16,22,.15)' : '0 0 0 3px rgba(10,102,194,.15)',
     },
   })
 
+  const { text: statusText, color: statusColor } = saveFeedback ?? deriveStatus(enabled, days, hour, minute)
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, background: C.bg, overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, background: Colors.bg, overflow: 'hidden' }}>
 
       {/* Header */}
       <Box sx={{
         display: 'flex', alignItems: 'center',
-        padding: '11px 20px', background: C.bgSurface,
-        borderBottom: `1px solid ${C.border}`, flexShrink: 0,
+        padding: '11px 20px', background: Colors.bgSurface,
+        borderBottom: `1px solid ${Colors.border}`, flexShrink: 0,
       }}>
-        <Box sx={{ fontSize: '14px', fontWeight: 700, color: C.text }}>Scheduled Run</Box>
+        <Box sx={{ fontSize: '14px', fontWeight: 700, color: Colors.text }}>Scheduled Run</Box>
       </Box>
 
       {/* Body */}
@@ -199,7 +201,7 @@ export default function ScheduleTab() {
         }}
       >
         {/* Section 1 */}
-        <Box sx={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: '10px', overflow: 'hidden' }}>
+        <Box sx={{ background: Colors.bgSurface, border: `1px solid ${Colors.border}`, borderRadius: '10px', overflow: 'hidden' }}>
           <SettingRow
             label="Enable daily schedule"
             desc="Automatically run the scraper on selected days at a set time."
@@ -214,11 +216,7 @@ export default function ScheduleTab() {
                 {DAY_NAMES.map((name, d) => {
                   const sel = days.includes(d)
                   return (
-                    <Box
-                      key={d}
-                      component="label"
-                      sx={{ cursor: 'pointer' }}
-                    >
+                    <Box key={d} component="label" sx={{ cursor: 'pointer' }}>
                       <Box
                         component="input"
                         type="checkbox"
@@ -230,12 +228,12 @@ export default function ScheduleTab() {
                       <Box sx={{
                         display: 'inline-block', width: '38px', height: '32px', lineHeight: '32px',
                         textAlign: 'center', borderRadius: '8px', fontSize: '12px', fontWeight: 700,
-                        border: `1px solid ${sel ? C.blue : C.border}`,
-                        background: sel ? C.blue : C.bg,
-                        color: sel ? '#fff' : C.muted,
+                        border: `1px solid ${sel ? Colors.blue : Colors.border}`,
+                        background: sel ? Colors.blue : Colors.bg,
+                        color: sel ? '#fff' : Colors.muted,
                         transition: 'background .15s, color .15s, border-color .15s',
                         userSelect: 'none',
-                        '&:hover': !enabled ? {} : { borderColor: C.blue, color: sel ? '#fff' : C.blue },
+                        '&:hover': !enabled ? {} : { borderColor: Colors.blue, color: sel ? '#fff' : Colors.blue },
                       }}>
                         {name}
                       </Box>
@@ -259,10 +257,10 @@ export default function ScheduleTab() {
                   maxLength={2}
                   autoComplete="off"
                   disabled={!enabled}
-                  onChange={(e) => { setHour(e.target.value); setHourError(false) }}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setHour(e.target.value); setHourError(false) }}
                   sx={inputSx(hourError)}
                 />
-                <Box component="span" sx={{ fontSize: '14px', fontWeight: 600, color: C.muted }}>:</Box>
+                <Box component="span" sx={{ fontSize: '14px', fontWeight: 600, color: Colors.muted }}>:</Box>
                 <Box
                   component="input"
                   type="text"
@@ -271,7 +269,7 @@ export default function ScheduleTab() {
                   maxLength={2}
                   autoComplete="off"
                   disabled={!enabled}
-                  onChange={(e) => { setMinute(e.target.value); setMinuteError(false) }}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setMinute(e.target.value); setMinuteError(false) }}
                   sx={inputSx(minuteError)}
                 />
               </Box>
@@ -286,7 +284,7 @@ export default function ScheduleTab() {
         </Box>
 
         {/* Section 2 — API key */}
-        <Box sx={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: '10px', overflow: 'hidden' }}>
+        <Box sx={{ background: Colors.bgSurface, border: `1px solid ${Colors.border}`, borderRadius: '10px', overflow: 'hidden' }}>
           <SettingRow
             label="Anthropic API Key"
             desc="Used by the scheduled run. Stored locally, never committed."
@@ -299,16 +297,16 @@ export default function ScheduleTab() {
               placeholder="sk-ant-…"
               autoComplete="off"
               spellCheck={false}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApiKey(e.target.value)}
               sx={{
                 flex: 1, height: '34px', padding: '0 12px',
-                border: `1px solid ${C.border}`, borderRadius: '8px',
-                background: C.bg, color: C.text,
+                border: `1px solid ${Colors.border}`, borderRadius: '8px',
+                background: Colors.bg, color: Colors.text,
                 fontSize: '13px',
                 fontFamily: "'SF Mono','Fira Code',monospace",
                 outline: 'none', transition: 'border-color .15s, box-shadow .15s',
-                '&::placeholder': { color: C.muted, fontFamily: 'inherit' },
-                '&:focus': { borderColor: C.blue, boxShadow: '0 0 0 3px rgba(10,102,194,.15)' },
+                '&::placeholder': { color: Colors.muted, fontFamily: 'inherit' },
+                '&:focus': { borderColor: Colors.blue, boxShadow: '0 0 0 3px rgba(10,102,194,.15)' },
               }}
             />
             <Box
@@ -328,7 +326,7 @@ export default function ScheduleTab() {
 
         {/* Footer */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
-          <Box sx={{ fontSize: '12px', fontWeight: 600, color: statusColor || C.muted }}>
+          <Box sx={{ fontSize: '12px', fontWeight: 600, color: statusColor }}>
             {statusText}
           </Box>
           <Box
@@ -336,12 +334,12 @@ export default function ScheduleTab() {
             disabled={saving}
             onClick={handleSave}
             sx={{
-              background: saving ? C.muted : C.blue, color: '#fff',
+              background: saving ? Colors.muted : Colors.blue, color: '#fff',
               border: 'none', borderRadius: '20px',
               padding: '9px 24px', fontSize: '13px', fontWeight: 700,
               cursor: saving ? 'default' : 'pointer',
               transition: 'background .15s',
-              '&:hover': saving ? {} : { background: C.blueLight },
+              '&:hover': saving ? {} : { background: Colors.blueLight },
             }}
           >
             {saving ? 'Applying…' : 'Save & Apply'}

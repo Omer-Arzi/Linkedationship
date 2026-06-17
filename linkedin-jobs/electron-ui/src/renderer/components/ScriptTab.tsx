@@ -1,51 +1,42 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Box from '@mui/material/Box'
-import { C } from '../theme'
+import { Colors } from '../theme'
+import { LOG_COLORS } from '../constants'
+import type { AppStatus, LogEntry } from '../types'
 
-// ── Log line colors ───────────────────────────────────────────────────────────
-const LOG_COLORS = {
-  heading: '#DDEAF5',
-  success: '#2EA84D',
-  error:   '#F05050',
-  warning: '#D4A017',
-  muted:   '#4A6A85',
-  claude:  '#A67FD4',
-  system:  '#2A6A8A',
-  info:    '#5BA3E0',
-  normal:  '#B8CCDC',
+// ── ScriptTab ─────────────────────────────────────────────────────────────────
+
+interface ScriptTabProps {
+  onStatusChange: (status: AppStatus) => void
 }
 
-export default function ScriptTab({ onStatusChange }) {
-  const [started, setStarted]         = useState(false)
-  const [screencastSrc, setScreencastSrc] = useState(null)
-  const [logs, setLogs]               = useState([])
-  const [loginVisible, setLoginVisible] = useState(false)
-  const [done, setDone]               = useState(false)
-  const [doneCode, setDoneCode]       = useState(0)
-  const logRef                        = useRef(null)
-  const autoScrollRef                 = useRef(true)
+export default function ScriptTab({ onStatusChange }: ScriptTabProps) {
+  const [started, setStarted]             = useState(false)
+  const [screencastSrc, setScreencastSrc] = useState<string | null>(null)
+  const [logs, setLogs]                   = useState<LogEntry[]>([])
+  const [loginVisible, setLoginVisible]   = useState(false)
+  const [done, setDone]                   = useState(false)
+  const [doneCode, setDoneCode]           = useState(0)
+  const logRef                            = useRef<HTMLDivElement>(null)
+  const autoScrollRef                     = useRef(true)
 
   useEffect(() => {
     window.api.onScreencastFrame((data) => {
       setScreencastSrc(`data:image/jpeg;base64,${data}`)
     })
-
     window.api.onLogLine((entry) => {
       setLogs(prev => [...prev, entry])
     })
-
     window.api.onWaitForLogin(() => {
       setLoginVisible(true)
     })
-
     window.api.onScriptDone(({ code }) => {
       setDoneCode(code)
       setDone(true)
       onStatusChange(code === 0 ? 'done' : 'error')
     })
-  }, [])
+  }, [onStatusChange])
 
-  // Auto-scroll log
   useEffect(() => {
     if (autoScrollRef.current && logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight
@@ -70,25 +61,24 @@ export default function ScriptTab({ onStatusChange }) {
   }
 
   return (
-    <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', background: C.bg }}>
+    <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', background: Colors.bg }}>
 
       {/* ── Browser panel ── */}
       <Box
         sx={{
           flex: '0 0 62%', display: 'flex', flexDirection: 'column',
-          borderRight: `1px solid ${C.border}`, overflow: 'hidden',
+          borderRight: `1px solid ${Colors.border}`, overflow: 'hidden',
         }}
       >
         <Box sx={{
           fontSize: '10px', fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase',
-          color: C.muted, padding: '7px 14px 6px',
-          background: C.bgSurface, borderBottom: `1px solid ${C.border}`, flexShrink: 0,
+          color: Colors.muted, padding: '7px 14px 6px',
+          background: Colors.bgSurface, borderBottom: `1px solid ${Colors.border}`, flexShrink: 0,
         }}>
           Browser
         </Box>
 
-        <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative', background: C.bgSurface }}>
-          {/* Screencast image */}
+        <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative', background: Colors.bgSurface }}>
           {screencastSrc && (
             <Box
               component="img"
@@ -103,25 +93,24 @@ export default function ScriptTab({ onStatusChange }) {
             />
           )}
 
-          {/* Placeholder / spinner — shown until first frame arrives */}
           {!screencastSrc && (
             <Box sx={{
               position: 'absolute', inset: 0,
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', gap: '16px', color: C.muted, background: C.bg,
+              justifyContent: 'center', gap: '16px', color: Colors.muted, background: Colors.bg,
             }}>
               {!started ? (
                 <Box
                   component="button"
                   onClick={handleStart}
                   sx={{
-                    background: C.blue, color: '#fff', border: 'none', borderRadius: '24px',
+                    background: Colors.blue, color: '#fff', border: 'none', borderRadius: '24px',
                     padding: '14px 32px', fontSize: '15px', fontWeight: 700,
                     cursor: 'pointer', letterSpacing: '.3px',
                     boxShadow: '0 4px 16px rgba(10,102,194,.35)',
                     transition: 'background .15s, transform .1s, box-shadow .15s',
                     '&:hover': {
-                      background: C.blueLight,
+                      background: Colors.blueLight,
                       boxShadow: '0 6px 20px rgba(10,102,194,.45)',
                       transform: 'translateY(-1px)',
                     },
@@ -133,12 +122,12 @@ export default function ScriptTab({ onStatusChange }) {
                 <>
                   <Box sx={{
                     width: 28, height: 28,
-                    border: `2px solid ${C.border}`, borderTopColor: C.blue,
+                    border: `2px solid ${Colors.border}`, borderTopColor: Colors.blue,
                     borderRadius: '50%',
                     animation: 'spin 0.8s linear infinite',
                     '@keyframes spin': { to: { transform: 'rotate(360deg)' } },
                   }} />
-                  <Box component="p" sx={{ fontSize: '13px', color: C.muted }}>
+                  <Box component="p" sx={{ fontSize: '13px', color: Colors.muted }}>
                     Waiting for browser…
                   </Box>
                 </>
@@ -152,13 +141,12 @@ export default function ScriptTab({ onStatusChange }) {
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <Box sx={{
           fontSize: '10px', fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase',
-          color: C.muted, padding: '7px 14px 6px',
-          background: C.bgSurface, borderBottom: `1px solid ${C.border}`, flexShrink: 0,
+          color: Colors.muted, padding: '7px 14px 6px',
+          background: Colors.bgSurface, borderBottom: `1px solid ${Colors.border}`, flexShrink: 0,
         }}>
           Logs
         </Box>
 
-        {/* Login banner */}
         {loginVisible && (
           <Box sx={{
             display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0,
@@ -170,10 +158,10 @@ export default function ScriptTab({ onStatusChange }) {
               component="button"
               onClick={handleContinue}
               sx={{
-                background: C.blue, color: '#fff', border: 'none', borderRadius: '14px',
+                background: Colors.blue, color: '#fff', border: 'none', borderRadius: '14px',
                 padding: '4px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
                 transition: 'background .15s', whiteSpace: 'nowrap',
-                '&:hover': { background: C.blueLight },
+                '&:hover': { background: Colors.blueLight },
               }}
             >
               Continue →
@@ -181,13 +169,12 @@ export default function ScriptTab({ onStatusChange }) {
           </Box>
         )}
 
-        {/* Log console */}
         <Box
           ref={logRef}
           onScroll={handleLogScroll}
           sx={{
             flex: 1, overflowY: 'auto', padding: '10px 0',
-            background: C.logBg,
+            background: Colors.logBg,
             fontFamily: "'SF Mono','Fira Code','Menlo',monospace",
             fontSize: '12px', lineHeight: 1.65,
             '&::-webkit-scrollbar': { width: '5px' },
@@ -201,7 +188,7 @@ export default function ScriptTab({ onStatusChange }) {
               sx={{
                 padding: '1px 16px',
                 whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-                color: LOG_COLORS[entry.type] || LOG_COLORS.normal,
+                color: LOG_COLORS[entry.type],
                 fontWeight: entry.type === 'heading' ? 700 : 400,
                 marginTop: entry.type === 'heading' ? '10px' : 0,
                 fontSize: entry.type === 'system' ? '11px' : '12px',
@@ -214,7 +201,6 @@ export default function ScriptTab({ onStatusChange }) {
           ))}
         </Box>
 
-        {/* Done banner */}
         {done && doneCode === 0 && (
           <Box sx={{
             background: '#0B2218', borderTop: '1px solid #0D4A2A', color: '#2EA84D',
