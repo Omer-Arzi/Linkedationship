@@ -2,14 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import Box from '@mui/material/Box'
 import { LOG_COLORS } from '../constants'
 import type { AppStatus, LogEntry } from '../types'
-import {
-  scriptTabRootStyle, scriptTabBrowserPanelStyle, scriptTabBrowserHeaderStyle,
-  scriptTabBrowserBodyStyle, scriptTabScreencastStyle, scriptTabNoScreencastStyle,
-  scriptTabStartButtonStyle, scriptTabSpinnerStyle, scriptTabSpinnerTextStyle,
-  scriptTabLogPanelStyle, scriptTabLogHeaderStyle, scriptTabLoginBannerStyle,
-  scriptTabContinueButtonStyle, scriptTabLogScrollStyle, scriptTabLogEntryStyle,
-  scriptTabDoneBannerStyle, scriptTabDoneCodeStyle,
-} from './styles'
+import { ScriptTabStyles } from './styles'
+import { ScriptTabStrings } from './strings'
 
 // ── ScriptTab ─────────────────────────────────────────────────────────────────
 
@@ -18,14 +12,14 @@ interface ScriptTabProps {
 }
 
 export default function ScriptTab({ onStatusChange }: ScriptTabProps) {
-  const [started, setStarted]             = useState(false)
+  const [started, setStarted] = useState(false)
   const [screencastSrc, setScreencastSrc] = useState<string | null>(null)
-  const [logs, setLogs]                   = useState<LogEntry[]>([])
-  const [loginVisible, setLoginVisible]   = useState(false)
-  const [done, setDone]                   = useState(false)
-  const [doneCode, setDoneCode]           = useState(0)
-  const logRef                            = useRef<HTMLDivElement>(null)
-  const autoScrollRef                     = useRef(true)
+  const [logs, setLogs] = useState<LogEntry[]>([])
+  const [loginVisible, setLoginVisible] = useState(false)
+  const [done, setDone] = useState(false)
+  const [doneCode, setDoneCode] = useState(0)
+  const logRef = useRef<HTMLDivElement>(null)
+  const autoScrollRef = useRef(true)
 
   useEffect(() => {
     window.api.onScreencastFrame((data) => {
@@ -68,33 +62,33 @@ export default function ScriptTab({ onStatusChange }: ScriptTabProps) {
   }
 
   return (
-    <Box sx={scriptTabRootStyle}>
+    <Box sx={ScriptTabStyles.rootStyle}>
 
       {/* ── Browser panel ── */}
-      <Box sx={scriptTabBrowserPanelStyle}>
-        <Box sx={scriptTabBrowserHeaderStyle}>Browser</Box>
+      <Box sx={ScriptTabStyles.browserPanelStyle}>
+        <Box sx={ScriptTabStyles.browserHeaderStyle}>{ScriptTabStrings.browserLabel}</Box>
 
-        <Box sx={scriptTabBrowserBodyStyle}>
+        <Box sx={ScriptTabStyles.browserBodyStyle}>
           {screencastSrc && (
             <Box
               component="img"
               src={screencastSrc}
               alt=""
-              sx={scriptTabScreencastStyle(done && doneCode === 0)}
+              sx={ScriptTabStyles.screencastStyle(done && doneCode === 0)}
             />
           )}
 
           {!screencastSrc && (
-            <Box sx={scriptTabNoScreencastStyle}>
+            <Box sx={ScriptTabStyles.noScreencastStyle}>
               {!started ? (
-                <Box component="button" onClick={handleStart} sx={scriptTabStartButtonStyle}>
-                  ▶ Start Searching
+                <Box component="button" onClick={handleStart} sx={ScriptTabStyles.startButtonStyle}>
+                  {ScriptTabStrings.startButton}
                 </Box>
               ) : (
                 <>
-                  <Box sx={scriptTabSpinnerStyle} />
-                  <Box component="p" sx={scriptTabSpinnerTextStyle}>
-                    Waiting for browser…
+                  <Box sx={ScriptTabStyles.spinnerStyle} />
+                  <Box component="p" sx={ScriptTabStyles.spinnerTextStyle}>
+                    {ScriptTabStrings.waitingBrowser}
                   </Box>
                 </>
               )}
@@ -104,31 +98,31 @@ export default function ScriptTab({ onStatusChange }: ScriptTabProps) {
       </Box>
 
       {/* ── Logs panel ── */}
-      <Box sx={scriptTabLogPanelStyle}>
-        <Box sx={scriptTabLogHeaderStyle}>Logs</Box>
+      <Box sx={ScriptTabStyles.logPanelStyle}>
+        <Box sx={ScriptTabStyles.logHeaderStyle}>{ScriptTabStrings.logsLabel}</Box>
 
         {loginVisible && (
-          <Box sx={scriptTabLoginBannerStyle}>
-            <span>Restore the Chromium window from the dock to log in, then click</span>
-            <Box component="button" onClick={handleContinue} sx={scriptTabContinueButtonStyle}>
-              Continue →
+          <Box sx={ScriptTabStyles.loginBannerStyle}>
+            <span>{ScriptTabStrings.loginBannerText}</span>
+            <Box component="button" onClick={handleContinue} sx={ScriptTabStyles.continueButtonStyle}>
+              {ScriptTabStrings.continueButton}
             </Box>
           </Box>
         )}
 
-        <Box ref={logRef} onScroll={handleLogScroll} sx={scriptTabLogScrollStyle}>
+        <Box ref={logRef} onScroll={handleLogScroll} sx={ScriptTabStyles.logScrollStyle}>
           {logs.map((entry, i) => (
-            <Box key={i} sx={scriptTabLogEntryStyle(entry.type, LOG_COLORS[entry.type])}>
+            <Box key={i} sx={ScriptTabStyles.logEntryStyle(entry.type, LOG_COLORS[entry.type])}>
               {entry.text}
             </Box>
           ))}
         </Box>
 
         {done && doneCode === 0 && (
-          <Box sx={scriptTabDoneBannerStyle}>
-            ✓ Done — check{' '}
-            <Box component="code" sx={scriptTabDoneCodeStyle}>
-              linkedin_jobs_connections.csv
+          <Box sx={ScriptTabStyles.doneBannerStyle}>
+            {ScriptTabStrings.doneBannerText}{' '}
+            <Box component="code" sx={ScriptTabStyles.doneCodeStyle}>
+              {ScriptTabStrings.doneFilename}
             </Box>
           </Box>
         )}

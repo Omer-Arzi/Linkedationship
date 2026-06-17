@@ -2,13 +2,8 @@ import { useState } from 'react'
 import Box from '@mui/material/Box'
 import { NAV_ITEMS, BADGE_STYLES } from '../constants'
 import type { AppStatus, NavItem } from '../types'
-import {
-  statusBadgeStyle, navButtonStyle, navButtonIconStyle, navButtonLabelStyle,
-  appRootStyle, appHeaderStyle, appHeaderTrafficLightsStyle,
-  appHeaderDotRedStyle, appHeaderDotYellowStyle, appHeaderDotGreenStyle,
-  appHeaderTitleStyle, appHeaderNoDragStyle,
-  appBodyStyle, appSidebarStyle, appTabPanelsStyle, appTabPanelStyle,
-} from './styles'
+import { AppStyles } from './styles'
+import { AppStrings } from './strings'
 import ScriptTab from './ScriptTab'
 import ResultsTab from './ResultsTab'
 import ScheduleTab from './ScheduleTab'
@@ -22,7 +17,7 @@ interface StatusBadgeProps {
 function StatusBadge({ status }: StatusBadgeProps) {
   const s = BADGE_STYLES[status]
   return (
-    <Box component="span" sx={statusBadgeStyle(s.bg, s.color, s.border)}>
+    <Box component="span" sx={AppStyles.statusBadgeStyle(s.bg, s.color, s.border)}>
       {status}
     </Box>
   )
@@ -44,10 +39,10 @@ function NavButton({ item, active, onClick }: NavButtonProps) {
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      sx={navButtonStyle(active, hovered)}
+      sx={AppStyles.navButtonStyle(active, hovered)}
     >
-      <Box component="span" sx={navButtonIconStyle}>{item.icon}</Box>
-      <Box component="span" sx={navButtonLabelStyle}>{item.label}</Box>
+      <Box component="span" sx={AppStyles.navButtonIconStyle}>{item.icon}</Box>
+      <Box component="span" sx={AppStyles.navButtonLabelStyle}>{item.label}</Box>
     </Box>
   )
 }
@@ -56,31 +51,31 @@ function NavButton({ item, active, onClick }: NavButtonProps) {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavItem['id']>('results')
-  const [status, setStatus]       = useState<AppStatus>('idle')
+  const [status, setStatus] = useState<AppStatus>('idle')
 
   return (
-    <Box sx={appRootStyle}>
+    <Box sx={AppStyles.rootStyle}>
 
       {/* ── Header ── */}
-      <Box component="header" sx={appHeaderStyle}>
-        <Box sx={appHeaderTrafficLightsStyle}>
-          <Box component="span" sx={appHeaderDotRedStyle} />
-          <Box component="span" sx={appHeaderDotYellowStyle} />
-          <Box component="span" sx={appHeaderDotGreenStyle} />
+      <Box component="header" sx={AppStyles.headerStyle}>
+        <Box sx={AppStyles.headerTrafficLightsStyle}>
+          <Box component="span" sx={AppStyles.headerDotRedStyle} />
+          <Box component="span" sx={AppStyles.headerDotYellowStyle} />
+          <Box component="span" sx={AppStyles.headerDotGreenStyle} />
         </Box>
-        <Box component="span" sx={appHeaderTitleStyle}>
-          LinkedIn Jobs Scraper
+        <Box component="span" sx={AppStyles.headerTitleStyle}>
+          {AppStrings.title}
         </Box>
-        <Box sx={appHeaderNoDragStyle}>
+        <Box sx={AppStyles.headerNoDragStyle}>
           <StatusBadge status={status} />
         </Box>
       </Box>
 
       {/* ── Body ── */}
-      <Box sx={appBodyStyle}>
+      <Box sx={AppStyles.bodyStyle}>
 
         {/* ── Sidebar ── */}
-        <Box component="nav" sx={appSidebarStyle}>
+        <Box component="nav" sx={AppStyles.sidebarStyle}>
           {NAV_ITEMS.map(item => (
             <NavButton
               key={item.id}
@@ -92,14 +87,14 @@ export default function App() {
         </Box>
 
         {/* ── Tab panels ── */}
-        <Box sx={appTabPanelsStyle}>
-          <Box sx={appTabPanelStyle(activeTab === 'script')}>
+        <Box sx={AppStyles.tabPanelsStyle}>
+          <Box sx={AppStyles.tabPanelStyle(activeTab === 'script')}>
             <ScriptTab onStatusChange={setStatus} />
           </Box>
-          <Box sx={appTabPanelStyle(activeTab === 'results')}>
+          <Box sx={AppStyles.tabPanelStyle(activeTab === 'results')}>
             <ResultsTab />
           </Box>
-          <Box sx={appTabPanelStyle(activeTab === 'schedule')}>
+          <Box sx={AppStyles.tabPanelStyle(activeTab === 'schedule')}>
             <ScheduleTab />
           </Box>
         </Box>

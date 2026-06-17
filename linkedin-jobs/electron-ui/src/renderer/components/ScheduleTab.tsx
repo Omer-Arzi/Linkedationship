@@ -3,18 +3,8 @@ import Box from '@mui/material/Box'
 import { Colors } from '../theme'
 import { DAY_NAMES, DEFAULT_DAYS } from '../constants'
 import type { ScheduleSettings, StatusInfo } from '../types'
-import {
-  toggleLabelStyle, toggleInputStyle, toggleTrackStyle, toggleThumbStyle,
-  settingRowStyle, settingRowContentStyle, settingRowLabelStyle, settingRowDescStyle,
-  scheduleTabRootStyle, scheduleTabHeaderStyle, scheduleTabHeaderTitleStyle,
-  scheduleTabBodyStyle, scheduleTabSectionStyle,
-  scheduleTabDaysContainerStyle, scheduleTabDayLabelStyle,
-  scheduleTabDayCheckboxStyle, scheduleTabDayBoxStyle,
-  scheduleTabTimeInputsStyle, scheduleTabColonStyle, scheduleTabTimeInputStyle,
-  scheduleTabApiKeyBodyStyle, scheduleTabApiKeyInputStyle,
-  scheduleTabShowKeyButtonStyle, scheduleTabFooterStyle,
-  scheduleTabStatusTextStyle, scheduleTabSaveButtonStyle,
-} from './styles'
+import { ScheduleTabStyles } from './styles'
+import { ScheduleTabStrings } from './strings'
 
 // ── Validators ────────────────────────────────────────────────────────────────
 
@@ -29,21 +19,21 @@ function parseMinute(val: string): number | null {
 }
 
 function deriveStatus(enabled: boolean, days: number[], hour: string, minute: string): StatusInfo {
-  if (!enabled) return { text: '● Schedule inactive', color: Colors.muted }
+  if (!enabled) return { text: ScheduleTabStrings.statusInactive, color: Colors.muted }
 
   const h = parseHour(hour)
   const m = parseMinute(minute)
 
   if (h === null || m === null) {
-    return { text: '⚠ Enter a valid time (hour 0–23, minute 0–59)', color: Colors.red }
+    return { text: ScheduleTabStrings.statusInvalidTime, color: Colors.red }
   }
   if (days.length === 0) {
-    return { text: '⚠ Select at least one day', color: Colors.red }
+    return { text: ScheduleTabStrings.statusNoDays, color: Colors.red }
   }
 
   const time    = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
   const dayList = [...days].sort((a, b) => a - b).map(d => DAY_NAMES[d]).join(', ')
-  return { text: `● Active — ${dayList} at ${time}`, color: Colors.blue }
+  return { text: ScheduleTabStrings.statusActive(dayList, time), color: Colors.blue }
 }
 
 // ── Toggle switch ─────────────────────────────────────────────────────────────
@@ -55,16 +45,16 @@ interface ToggleProps {
 
 function Toggle({ checked, onChange }: ToggleProps) {
   return (
-    <Box component="label" sx={toggleLabelStyle}>
+    <Box component="label" sx={ScheduleTabStyles.toggleLabelStyle}>
       <Box
         component="input"
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        sx={toggleInputStyle}
+        sx={ScheduleTabStyles.toggleInputStyle}
       />
-      <Box sx={toggleTrackStyle(checked)}>
-        <Box sx={toggleThumbStyle(checked)} />
+      <Box sx={ScheduleTabStyles.toggleTrackStyle(checked)}>
+        <Box sx={ScheduleTabStyles.toggleThumbStyle(checked)} />
       </Box>
     </Box>
   )
@@ -81,10 +71,10 @@ interface SettingRowProps {
 
 function SettingRow({ label, desc, right, disabled }: SettingRowProps) {
   return (
-    <Box sx={settingRowStyle(disabled)}>
-      <Box sx={settingRowContentStyle}>
-        <Box sx={settingRowLabelStyle}>{label}</Box>
-        {desc && <Box sx={settingRowDescStyle}>{desc}</Box>}
+    <Box sx={ScheduleTabStyles.settingRowStyle(disabled)}>
+      <Box sx={ScheduleTabStyles.settingRowContentStyle}>
+        <Box sx={ScheduleTabStyles.settingRowLabelStyle}>{label}</Box>
+        {desc && <Box sx={ScheduleTabStyles.settingRowDescStyle}>{desc}</Box>}
       </Box>
       {right}
     </Box>
@@ -94,16 +84,16 @@ function SettingRow({ label, desc, right, disabled }: SettingRowProps) {
 // ── ScheduleTab ───────────────────────────────────────────────────────────────
 
 export default function ScheduleTab() {
-  const [enabled,     setEnabled]     = useState(false)
-  const [days,        setDays]        = useState<number[]>(DEFAULT_DAYS)
-  const [hour,        setHour]        = useState('08')
-  const [minute,      setMinute]      = useState('00')
-  const [hourError,   setHourError]   = useState(false)
+  const [enabled, setEnabled] = useState(false)
+  const [days, setDays] = useState<number[]>(DEFAULT_DAYS)
+  const [hour, setHour] = useState('08')
+  const [minute, setMinute] = useState('00')
+  const [hourError, setHourError] = useState(false)
   const [minuteError, setMinuteError] = useState(false)
-  const [confirm,     setConfirm]     = useState(true)
-  const [apiKey,      setApiKey]      = useState('')
-  const [showKey,     setShowKey]     = useState(false)
-  const [saving,      setSaving]      = useState(false)
+  const [confirm, setConfirm] = useState(true)
+  const [apiKey, setApiKey] = useState('')
+  const [showKey, setShowKey] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [saveFeedback, setSaveFeedback] = useState<StatusInfo | null>(null)
 
   useEffect(() => {
@@ -129,7 +119,7 @@ export default function ScheduleTab() {
       if (h === null) { setHourError(true); return }
       if (m === null) { setMinuteError(true); return }
       if (days.length === 0) {
-        setSaveFeedback({ text: '⚠ Select at least one day', color: Colors.red })
+        setSaveFeedback({ text: ScheduleTabStrings.statusNoDays, color: Colors.red })
         return
       }
     }
@@ -150,54 +140,56 @@ export default function ScheduleTab() {
       const time    = `${String(settings.hour).padStart(2, '0')}:${String(settings.minute).padStart(2, '0')}`
       const dayList = [...days].sort((a, b) => a - b).map(d => DAY_NAMES[d]).join(', ')
       setSaveFeedback({
-        text:  settings.enabled ? `✓ Applied — ${dayList} at ${time}` : '✓ Applied — schedule inactive',
+        text:  settings.enabled
+          ? ScheduleTabStrings.appliedActive(dayList, time)
+          : ScheduleTabStrings.appliedInactive,
         color: Colors.green,
       })
       setTimeout(() => setSaveFeedback(null), 2500)
     } else {
-      setSaveFeedback({ text: `✗ Error: ${result.error ?? 'Unknown error'}`, color: Colors.red })
+      setSaveFeedback({ text: ScheduleTabStrings.errorMessage(result.error ?? ScheduleTabStrings.unknownError), color: Colors.red })
     }
   }
 
   const { text: statusText, color: statusColor } = saveFeedback ?? deriveStatus(enabled, days, hour, minute)
 
   return (
-    <Box sx={scheduleTabRootStyle}>
+    <Box sx={ScheduleTabStyles.rootStyle}>
 
       {/* Header */}
-      <Box sx={scheduleTabHeaderStyle}>
-        <Box sx={scheduleTabHeaderTitleStyle}>Scheduled Run</Box>
+      <Box sx={ScheduleTabStyles.headerStyle}>
+        <Box sx={ScheduleTabStyles.headerTitleStyle}>{ScheduleTabStrings.title}</Box>
       </Box>
 
       {/* Body */}
-      <Box sx={scheduleTabBodyStyle}>
+      <Box sx={ScheduleTabStyles.bodyStyle}>
 
         {/* Section 1 */}
-        <Box sx={scheduleTabSectionStyle}>
+        <Box sx={ScheduleTabStyles.sectionStyle}>
           <SettingRow
-            label="Enable daily schedule"
-            desc="Automatically run the scraper on selected days at a set time."
+            label={ScheduleTabStrings.enableLabel}
+            desc={ScheduleTabStrings.enableDesc}
             right={<Toggle checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />}
           />
 
           <SettingRow
-            label="Run on"
+            label={ScheduleTabStrings.runOnLabel}
             disabled={!enabled}
             right={
-              <Box sx={scheduleTabDaysContainerStyle}>
+              <Box sx={ScheduleTabStyles.daysContainerStyle}>
                 {DAY_NAMES.map((name, d) => {
                   const sel = days.includes(d)
                   return (
-                    <Box key={d} component="label" sx={scheduleTabDayLabelStyle}>
+                    <Box key={d} component="label" sx={ScheduleTabStyles.dayLabelStyle}>
                       <Box
                         component="input"
                         type="checkbox"
                         checked={sel}
                         disabled={!enabled}
                         onChange={() => toggleDay(d)}
-                        sx={scheduleTabDayCheckboxStyle}
+                        sx={ScheduleTabStyles.dayCheckboxStyle}
                       />
-                      <Box sx={scheduleTabDayBoxStyle(sel, enabled)}>
+                      <Box sx={ScheduleTabStyles.dayBoxStyle(sel, enabled)}>
                         {name}
                       </Box>
                     </Box>
@@ -208,10 +200,10 @@ export default function ScheduleTab() {
           />
 
           <SettingRow
-            label="Run at"
+            label={ScheduleTabStrings.runAtLabel}
             disabled={!enabled}
             right={
-              <Box sx={scheduleTabTimeInputsStyle}>
+              <Box sx={ScheduleTabStyles.timeInputsStyle}>
                 <Box
                   component="input"
                   type="text"
@@ -221,9 +213,9 @@ export default function ScheduleTab() {
                   autoComplete="off"
                   disabled={!enabled}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setHour(e.target.value); setHourError(false) }}
-                  sx={scheduleTabTimeInputStyle(hourError)}
+                  sx={ScheduleTabStyles.timeInputStyle(hourError)}
                 />
-                <Box component="span" sx={scheduleTabColonStyle}>:</Box>
+                <Box component="span" sx={ScheduleTabStyles.colonStyle}>:</Box>
                 <Box
                   component="input"
                   type="text"
@@ -233,59 +225,59 @@ export default function ScheduleTab() {
                   autoComplete="off"
                   disabled={!enabled}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setMinute(e.target.value); setMinuteError(false) }}
-                  sx={scheduleTabTimeInputStyle(minuteError)}
+                  sx={ScheduleTabStyles.timeInputStyle(minuteError)}
                 />
               </Box>
             }
           />
 
           <SettingRow
-            label="Require confirmation"
-            desc="Show a dialog at the scheduled time so you can skip the run if needed."
+            label={ScheduleTabStrings.confirmLabel}
+            desc={ScheduleTabStrings.confirmDesc}
             right={<Toggle checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />}
           />
         </Box>
 
         {/* Section 2 — API key */}
-        <Box sx={scheduleTabSectionStyle}>
+        <Box sx={ScheduleTabStyles.sectionStyle}>
           <SettingRow
-            label="Anthropic API Key"
-            desc="Used by the scheduled run. Stored locally, never committed."
+            label={ScheduleTabStrings.apiKeyLabel}
+            desc={ScheduleTabStrings.apiKeyDesc}
           />
-          <Box sx={scheduleTabApiKeyBodyStyle}>
+          <Box sx={ScheduleTabStyles.apiKeyBodyStyle}>
             <Box
               component="input"
               type={showKey ? 'text' : 'password'}
               value={apiKey}
-              placeholder="sk-ant-…"
+              placeholder={ScheduleTabStrings.apiKeyPlaceholder}
               autoComplete="off"
               spellCheck={false}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApiKey(e.target.value)}
-              sx={scheduleTabApiKeyInputStyle}
+              sx={ScheduleTabStyles.apiKeyInputStyle}
             />
             <Box
               component="button"
               onClick={() => setShowKey(v => !v)}
-              title="Show / hide"
-              sx={scheduleTabShowKeyButtonStyle}
+              title={ScheduleTabStrings.showHideTitle}
+              sx={ScheduleTabStyles.showKeyButtonStyle}
             >
-              👁
+              {ScheduleTabStrings.showHideIcon}
             </Box>
           </Box>
         </Box>
 
         {/* Footer */}
-        <Box sx={scheduleTabFooterStyle}>
-          <Box sx={scheduleTabStatusTextStyle(statusColor)}>
+        <Box sx={ScheduleTabStyles.footerStyle}>
+          <Box sx={ScheduleTabStyles.statusTextStyle(statusColor)}>
             {statusText}
           </Box>
           <Box
             component="button"
             disabled={saving}
             onClick={handleSave}
-            sx={scheduleTabSaveButtonStyle(saving)}
+            sx={ScheduleTabStyles.saveButtonStyle(saving)}
           >
-            {saving ? 'Applying…' : 'Save & Apply'}
+            {saving ? ScheduleTabStrings.savingButton : ScheduleTabStrings.saveButton}
           </Box>
         </Box>
 
