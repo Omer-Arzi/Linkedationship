@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import Box from '@mui/material/Box'
-import { Colors } from '../theme'
 import { LOG_COLORS } from '../constants'
 import type { AppStatus, LogEntry } from '../types'
+import {
+  scriptTabRootStyle, scriptTabBrowserPanelStyle, scriptTabBrowserHeaderStyle,
+  scriptTabBrowserBodyStyle, scriptTabScreencastStyle, scriptTabNoScreencastStyle,
+  scriptTabStartButtonStyle, scriptTabSpinnerStyle, scriptTabSpinnerTextStyle,
+  scriptTabLogPanelStyle, scriptTabLogHeaderStyle, scriptTabLoginBannerStyle,
+  scriptTabContinueButtonStyle, scriptTabLogScrollStyle, scriptTabLogEntryStyle,
+  scriptTabDoneBannerStyle, scriptTabDoneCodeStyle,
+} from './styles'
 
 // ── ScriptTab ─────────────────────────────────────────────────────────────────
 
@@ -61,73 +68,32 @@ export default function ScriptTab({ onStatusChange }: ScriptTabProps) {
   }
 
   return (
-    <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', background: Colors.bg }}>
+    <Box sx={scriptTabRootStyle}>
 
       {/* ── Browser panel ── */}
-      <Box
-        sx={{
-          flex: '0 0 62%', display: 'flex', flexDirection: 'column',
-          borderRight: `1px solid ${Colors.border}`, overflow: 'hidden',
-        }}
-      >
-        <Box sx={{
-          fontSize: '10px', fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase',
-          color: Colors.muted, padding: '7px 14px 6px',
-          background: Colors.bgSurface, borderBottom: `1px solid ${Colors.border}`, flexShrink: 0,
-        }}>
-          Browser
-        </Box>
+      <Box sx={scriptTabBrowserPanelStyle}>
+        <Box sx={scriptTabBrowserHeaderStyle}>Browser</Box>
 
-        <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative', background: Colors.bgSurface }}>
+        <Box sx={scriptTabBrowserBodyStyle}>
           {screencastSrc && (
             <Box
               component="img"
               src={screencastSrc}
               alt=""
-              sx={{
-                width: '100%', height: '100%',
-                objectFit: 'cover', objectPosition: 'top left',
-                opacity: done && doneCode === 0 ? 0.4 : 1,
-                display: 'block',
-              }}
+              sx={scriptTabScreencastStyle(done && doneCode === 0)}
             />
           )}
 
           {!screencastSrc && (
-            <Box sx={{
-              position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', gap: '16px', color: Colors.muted, background: Colors.bg,
-            }}>
+            <Box sx={scriptTabNoScreencastStyle}>
               {!started ? (
-                <Box
-                  component="button"
-                  onClick={handleStart}
-                  sx={{
-                    background: Colors.blue, color: '#fff', border: 'none', borderRadius: '24px',
-                    padding: '14px 32px', fontSize: '15px', fontWeight: 700,
-                    cursor: 'pointer', letterSpacing: '.3px',
-                    boxShadow: '0 4px 16px rgba(10,102,194,.35)',
-                    transition: 'background .15s, transform .1s, box-shadow .15s',
-                    '&:hover': {
-                      background: Colors.blueLight,
-                      boxShadow: '0 6px 20px rgba(10,102,194,.45)',
-                      transform: 'translateY(-1px)',
-                    },
-                  }}
-                >
+                <Box component="button" onClick={handleStart} sx={scriptTabStartButtonStyle}>
                   ▶ Start Searching
                 </Box>
               ) : (
                 <>
-                  <Box sx={{
-                    width: 28, height: 28,
-                    border: `2px solid ${Colors.border}`, borderTopColor: Colors.blue,
-                    borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite',
-                    '@keyframes spin': { to: { transform: 'rotate(360deg)' } },
-                  }} />
-                  <Box component="p" sx={{ fontSize: '13px', color: Colors.muted }}>
+                  <Box sx={scriptTabSpinnerStyle} />
+                  <Box component="p" sx={scriptTabSpinnerTextStyle}>
                     Waiting for browser…
                   </Box>
                 </>
@@ -138,76 +104,30 @@ export default function ScriptTab({ onStatusChange }: ScriptTabProps) {
       </Box>
 
       {/* ── Logs panel ── */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <Box sx={{
-          fontSize: '10px', fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase',
-          color: Colors.muted, padding: '7px 14px 6px',
-          background: Colors.bgSurface, borderBottom: `1px solid ${Colors.border}`, flexShrink: 0,
-        }}>
-          Logs
-        </Box>
+      <Box sx={scriptTabLogPanelStyle}>
+        <Box sx={scriptTabLogHeaderStyle}>Logs</Box>
 
         {loginVisible && (
-          <Box sx={{
-            display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0,
-            padding: '8px 14px', background: '#112840', borderBottom: '1px solid #1E4A70',
-            color: '#A8C4DC', fontSize: '12px',
-          }}>
+          <Box sx={scriptTabLoginBannerStyle}>
             <span>Restore the Chromium window from the dock to log in, then click</span>
-            <Box
-              component="button"
-              onClick={handleContinue}
-              sx={{
-                background: Colors.blue, color: '#fff', border: 'none', borderRadius: '14px',
-                padding: '4px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                transition: 'background .15s', whiteSpace: 'nowrap',
-                '&:hover': { background: Colors.blueLight },
-              }}
-            >
+            <Box component="button" onClick={handleContinue} sx={scriptTabContinueButtonStyle}>
               Continue →
             </Box>
           </Box>
         )}
 
-        <Box
-          ref={logRef}
-          onScroll={handleLogScroll}
-          sx={{
-            flex: 1, overflowY: 'auto', padding: '10px 0',
-            background: Colors.logBg,
-            fontFamily: "'SF Mono','Fira Code','Menlo',monospace",
-            fontSize: '12px', lineHeight: 1.65,
-            '&::-webkit-scrollbar': { width: '5px' },
-            '&::-webkit-scrollbar-track': { background: 'transparent' },
-            '&::-webkit-scrollbar-thumb': { background: '#1E3A58', borderRadius: '3px' },
-          }}
-        >
+        <Box ref={logRef} onScroll={handleLogScroll} sx={scriptTabLogScrollStyle}>
           {logs.map((entry, i) => (
-            <Box
-              key={i}
-              sx={{
-                padding: '1px 16px',
-                whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-                color: LOG_COLORS[entry.type],
-                fontWeight: entry.type === 'heading' ? 700 : 400,
-                marginTop: entry.type === 'heading' ? '10px' : 0,
-                fontSize: entry.type === 'system' ? '11px' : '12px',
-                textAlign: entry.type === 'system' ? 'center' : 'left',
-                margin: entry.type === 'system' ? '6px 0' : undefined,
-              }}
-            >
+            <Box key={i} sx={scriptTabLogEntryStyle(entry.type, LOG_COLORS[entry.type])}>
               {entry.text}
             </Box>
           ))}
         </Box>
 
         {done && doneCode === 0 && (
-          <Box sx={{
-            background: '#0B2218', borderTop: '1px solid #0D4A2A', color: '#2EA84D',
-            padding: '10px 16px', fontSize: '12px', fontWeight: 600, flexShrink: 0,
-          }}>
+          <Box sx={scriptTabDoneBannerStyle}>
             ✓ Done — check{' '}
-            <Box component="code" sx={{ background: 'rgba(255,255,255,.08)', padding: '1px 6px', borderRadius: '3px', fontFamily: "'SF Mono',monospace" }}>
+            <Box component="code" sx={scriptTabDoneCodeStyle}>
               linkedin_jobs_connections.csv
             </Box>
           </Box>

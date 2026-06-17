@@ -3,6 +3,15 @@ import Box from '@mui/material/Box'
 import { Colors } from '../theme'
 import { CV_OPTIONS } from '../constants'
 import type { CvFilterValue, JobRow, JobGroup, ResumeState } from '../types'
+import {
+  sentCheckboxLabelStyle, sentCheckboxInputStyle, sentCheckboxBoxStyle, sentCheckboxCheckmarkStyle,
+  cvFilterRootStyle, cvFilterArrowStyle, cvFilterDropdownStyle, cvFilterOptionStyle,
+  dateGroupRootStyle, dateGroupHeaderStyle, dateGroupArrowStyle, dateGroupTableStyle,
+  dateGroupTheadRowStyle, dateGroupTbodyRowStyle, dateGroupLinkButtonStyle, dateGroupTagStyle,
+  resultsTabRootStyle, resultsTabHeaderStyle, resultsTabHeaderTitleStyle,
+  resultsTabHeaderActionsStyle, resultsTabSearchInputStyle,
+  resultsTabRefreshButtonStyle, resultsTabBodyStyle, resultsTabEmptyStyle,
+} from './styles'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -25,35 +34,16 @@ interface SentCheckboxProps {
 
 function SentCheckbox({ checked, onChange }: SentCheckboxProps) {
   return (
-    <Box
-      component="label"
-      sx={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        cursor: 'pointer', position: 'relative', width: 20, height: 20,
-      }}
-    >
+    <Box component="label" sx={sentCheckboxLabelStyle}>
       <Box
         component="input"
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        sx={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+        sx={sentCheckboxInputStyle}
       />
-      <Box sx={{
-        width: 18, height: 18, borderRadius: '4px',
-        border: checked ? `2px solid ${Colors.blue}` : `2px solid ${Colors.border}`,
-        background: checked ? Colors.blue : Colors.bg,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'background .15s, border-color .15s',
-        '&:hover': { borderColor: Colors.blue },
-      }}>
-        {checked && (
-          <Box sx={{
-            width: '5px', height: '9px',
-            border: '2px solid #fff', borderTop: 'none', borderLeft: 'none',
-            transform: 'rotate(45deg) translate(-1px, -1px)',
-          }} />
-        )}
+      <Box sx={sentCheckboxBoxStyle(checked)}>
+        {checked && <Box sx={sentCheckboxCheckmarkStyle} />}
       </Box>
     </Box>
   )
@@ -82,22 +72,10 @@ function CVFilter({ value, onChange }: CVFilterProps) {
     <Box
       ref={ref}
       onClick={(e: React.MouseEvent) => { e.stopPropagation(); setOpen(o => !o) }}
-      sx={{
-        position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px',
-        height: '30px', padding: '0 12px',
-        border: `1px solid ${open ? Colors.blue : Colors.border}`, borderRadius: '20px',
-        background: Colors.bg, color: Colors.text,
-        fontSize: '12px', cursor: 'pointer', userSelect: 'none',
-        transition: 'border-color .15s',
-        '&:hover': { borderColor: Colors.blue },
-      }}
+      sx={cvFilterRootStyle(open)}
     >
       <span>{selected.label}</span>
-      <Box
-        component="svg"
-        viewBox="0 0 10 6"
-        sx={{ width: '10px', height: '6px', color: Colors.muted, flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}
-      >
+      <Box component="svg" viewBox="0 0 10 6" sx={cvFilterArrowStyle(open)}>
         <path d="M0 0l5 6 5-6z" fill="currentColor" />
       </Box>
 
@@ -105,28 +83,14 @@ function CVFilter({ value, onChange }: CVFilterProps) {
         <Box
           component="ul"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          sx={{
-            position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 100,
-            minWidth: '100%', background: Colors.bgSurface,
-            border: `1px solid ${Colors.border}`, borderRadius: '10px',
-            boxShadow: '0 4px 16px rgba(16,48,80,.12)',
-            listStyle: 'none', padding: '4px', margin: 0,
-          }}
+          sx={cvFilterDropdownStyle}
         >
           {CV_OPTIONS.map(opt => (
             <Box
               key={opt.value}
               component="li"
               onClick={() => { onChange(opt.value); setOpen(false) }}
-              sx={{
-                padding: '7px 12px', borderRadius: '7px',
-                fontSize: '12px',
-                color: opt.value === value ? Colors.blue : Colors.text,
-                fontWeight: opt.value === value ? 700 : 400,
-                cursor: 'pointer', whiteSpace: 'nowrap',
-                transition: 'background .1s',
-                '&:hover': { background: Colors.bg },
-              }}
+              sx={cvFilterOptionStyle(opt.value === value)}
             >
               {opt.label}
             </Box>
@@ -173,49 +137,19 @@ function DateGroup({ date, rows, resumeState, onResumeChange, searchQuery, cvFil
   const effectiveCollapsed = active ? false : collapsed
 
   return (
-    <Box sx={{ marginBottom: effectiveCollapsed ? '8px' : '32px' }}>
+    <Box sx={dateGroupRootStyle(effectiveCollapsed)}>
       {/* Date label */}
-      <Box
-        onClick={() => setCollapsed(c => !c)}
-        sx={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          fontSize: '11px', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase',
-          color: Colors.muted, marginBottom: effectiveCollapsed ? 0 : '10px',
-          paddingBottom: '7px', borderBottom: `2px solid ${Colors.border}`,
-          cursor: 'pointer', userSelect: 'none', transition: 'color .15s',
-          '&:hover': { color: Colors.blue },
-        }}
-      >
+      <Box onClick={() => setCollapsed(c => !c)} sx={dateGroupHeaderStyle(effectiveCollapsed)}>
         <span>{formatDate(date)} — {rows.length} job{rows.length !== 1 ? 's' : ''}</span>
-        <Box
-          component="svg"
-          viewBox="0 0 10 6"
-          sx={{ width: '10px', height: '6px', flexShrink: 0, transform: effectiveCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform .2s' }}
-        >
+        <Box component="svg" viewBox="0 0 10 6" sx={dateGroupArrowStyle(effectiveCollapsed)}>
           <path d="M0 0l5 6 5-6z" fill="currentColor" />
         </Box>
       </Box>
 
       {!effectiveCollapsed && (
-        <Box
-          component="table"
-          sx={{
-            width: '100%', borderCollapse: 'collapse',
-            background: Colors.bgSurface, borderRadius: '8px', overflow: 'hidden',
-            boxShadow: '0 1px 4px rgba(16,48,80,.07)',
-          }}
-        >
+        <Box component="table" sx={dateGroupTableStyle}>
           <thead>
-            <Box
-              component="tr"
-              sx={{
-                '& th': {
-                  textAlign: 'left', padding: '9px 14px',
-                  fontSize: '11px', fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase',
-                  color: Colors.muted, background: Colors.bg, borderBottom: `1px solid ${Colors.border}`,
-                },
-              }}
-            >
+            <Box component="tr" sx={dateGroupTheadRowStyle}>
               <th>Company</th>
               <th>Job Title</th>
               <th>Link</th>
@@ -227,35 +161,14 @@ function DateGroup({ date, rows, resumeState, onResumeChange, searchQuery, cvFil
             {visibleRows.map((row, i) => {
               const sent = !!resumeState[row.url]
               return (
-                <Box
-                  key={i}
-                  component="tr"
-                  sx={{
-                    '& td': {
-                      padding: '10px 14px', fontSize: '13px',
-                      color: Colors.text, borderBottom: '1px solid #EDF2F7',
-                      maxWidth: '240px', overflow: 'hidden',
-                      textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      opacity: sent ? 0.5 : 1,
-                    },
-                    '& td:last-child': { opacity: 1 },
-                    '&:last-child td': { borderBottom: 'none' },
-                    '&:hover td': { background: '#F0F6FF' },
-                  }}
-                >
+                <Box key={i} component="tr" sx={dateGroupTbodyRowStyle(sent)}>
                   <td title={row.company}>{row.company}</td>
                   <td title={row.title}>{row.title}</td>
                   <td>
                     <Box
                       component="button"
                       onClick={() => window.api.openURL(row.url)}
-                      sx={{
-                        background: 'none', border: `1px solid ${Colors.border}`, color: Colors.blue,
-                        cursor: 'pointer', fontSize: '12px', fontWeight: 600,
-                        padding: '3px 10px', borderRadius: '14px',
-                        transition: 'background .12s, border-color .12s',
-                        '&:hover': { background: '#EBF3FD', borderColor: Colors.blue },
-                      }}
+                      sx={dateGroupLinkButtonStyle}
                     >
                       Open ↗
                     </Box>
@@ -263,15 +176,7 @@ function DateGroup({ date, rows, resumeState, onResumeChange, searchQuery, cvFil
                   <td>
                     {row.conns
                       ? row.conns.split(';').map((n, j) => (
-                          <Box
-                            key={j}
-                            component="span"
-                            sx={{
-                              display: 'inline-block', background: '#EEF1FF', color: '#2D4ED8',
-                              border: '1px solid #C7D2FA', borderRadius: '12px',
-                              padding: '2px 9px', fontSize: '11px', fontWeight: 600, margin: '1px 2px',
-                            }}
-                          >
+                          <Box key={j} component="span" sx={dateGroupTagStyle}>
                             {n.trim()}
                           </Box>
                         ))
@@ -365,16 +270,12 @@ export default function ResultsTab() {
   const q = searchQuery.trim().toLowerCase()
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, background: Colors.bg, overflow: 'hidden' }}>
+    <Box sx={resultsTabRootStyle}>
 
       {/* Header */}
-      <Box sx={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '11px 20px', background: Colors.bgSurface,
-        borderBottom: `1px solid ${Colors.border}`, flexShrink: 0,
-      }}>
-        <Box sx={{ fontSize: '14px', fontWeight: 700, color: Colors.text }}>Saved Results</Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <Box sx={resultsTabHeaderStyle}>
+        <Box sx={resultsTabHeaderTitleStyle}>Saved Results</Box>
+        <Box sx={resultsTabHeaderActionsStyle}>
           <CVFilter value={cvFilter} onChange={setCvFilter} />
           <Box
             component="input"
@@ -384,43 +285,18 @@ export default function ResultsTab() {
             autoComplete="off"
             value={searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-            sx={{
-              height: '30px', padding: '0 12px',
-              border: `1px solid ${Colors.border}`, borderRadius: '20px',
-              background: Colors.bg, color: Colors.text, fontSize: '12px',
-              outline: 'none', width: '180px',
-              transition: 'border-color .15s, box-shadow .15s',
-              '&::placeholder': { color: Colors.muted },
-              '&:focus': { borderColor: Colors.blue, boxShadow: '0 0 0 3px rgba(10,102,194,.15)' },
-            }}
+            sx={resultsTabSearchInputStyle}
           />
-          <Box
-            component="button"
-            onClick={loadResults}
-            sx={{
-              background: Colors.bg, color: Colors.muted,
-              border: `1px solid ${Colors.border}`, borderRadius: '20px',
-              padding: '5px 14px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-              transition: 'border-color .15s, color .15s',
-              '&:hover': { borderColor: Colors.blue, color: Colors.blue },
-            }}
-          >
+          <Box component="button" onClick={loadResults} sx={resultsTabRefreshButtonStyle}>
             ↻ Refresh
           </Box>
         </Box>
       </Box>
 
       {/* Body */}
-      <Box
-        sx={{
-          flex: 1, overflowY: 'auto', padding: '20px 24px',
-          '&::-webkit-scrollbar': { width: '5px' },
-          '&::-webkit-scrollbar-track': { background: 'transparent' },
-          '&::-webkit-scrollbar-thumb': { background: Colors.border, borderRadius: '3px' },
-        }}
-      >
+      <Box sx={resultsTabBodyStyle}>
         {groups.length === 0 ? (
-          <Box sx={{ color: Colors.muted, fontSize: '13px', textAlign: 'center', paddingTop: '64px' }}>
+          <Box sx={resultsTabEmptyStyle}>
             No results yet — run the script first.
           </Box>
         ) : (

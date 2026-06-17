@@ -3,6 +3,18 @@ import Box from '@mui/material/Box'
 import { Colors } from '../theme'
 import { DAY_NAMES, DEFAULT_DAYS } from '../constants'
 import type { ScheduleSettings, StatusInfo } from '../types'
+import {
+  toggleLabelStyle, toggleInputStyle, toggleTrackStyle, toggleThumbStyle,
+  settingRowStyle, settingRowContentStyle, settingRowLabelStyle, settingRowDescStyle,
+  scheduleTabRootStyle, scheduleTabHeaderStyle, scheduleTabHeaderTitleStyle,
+  scheduleTabBodyStyle, scheduleTabSectionStyle,
+  scheduleTabDaysContainerStyle, scheduleTabDayLabelStyle,
+  scheduleTabDayCheckboxStyle, scheduleTabDayBoxStyle,
+  scheduleTabTimeInputsStyle, scheduleTabColonStyle, scheduleTabTimeInputStyle,
+  scheduleTabApiKeyBodyStyle, scheduleTabApiKeyInputStyle,
+  scheduleTabShowKeyButtonStyle, scheduleTabFooterStyle,
+  scheduleTabStatusTextStyle, scheduleTabSaveButtonStyle,
+} from './styles'
 
 // ── Validators ────────────────────────────────────────────────────────────────
 
@@ -43,26 +55,16 @@ interface ToggleProps {
 
 function Toggle({ checked, onChange }: ToggleProps) {
   return (
-    <Box component="label" sx={{ position: 'relative', flexShrink: 0, cursor: 'pointer' }}>
+    <Box component="label" sx={toggleLabelStyle}>
       <Box
         component="input"
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        sx={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+        sx={toggleInputStyle}
       />
-      <Box sx={{
-        display: 'block', width: '40px', height: '24px', borderRadius: '12px',
-        background: checked ? Colors.blue : Colors.border,
-        transition: 'background .2s', position: 'relative',
-      }}>
-        <Box sx={{
-          position: 'absolute', top: '3px',
-          left: checked ? 'calc(100% - 21px)' : '3px',
-          width: '18px', height: '18px', borderRadius: '50%',
-          background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,.2)',
-          transition: 'left .2s',
-        }} />
+      <Box sx={toggleTrackStyle(checked)}>
+        <Box sx={toggleThumbStyle(checked)} />
       </Box>
     </Box>
   )
@@ -79,18 +81,10 @@ interface SettingRowProps {
 
 function SettingRow({ label, desc, right, disabled }: SettingRowProps) {
   return (
-    <Box sx={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      gap: '24px', padding: '16px 20px',
-      borderBottom: `1px solid ${Colors.border}`,
-      opacity: disabled ? 0.4 : 1,
-      pointerEvents: disabled ? 'none' : 'auto',
-      transition: 'opacity .2s',
-      '&:last-child': { borderBottom: 'none' },
-    }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
-        <Box sx={{ fontSize: '13px', fontWeight: 600, color: Colors.text }}>{label}</Box>
-        {desc && <Box sx={{ fontSize: '12px', color: Colors.muted, lineHeight: 1.4 }}>{desc}</Box>}
+    <Box sx={settingRowStyle(disabled)}>
+      <Box sx={settingRowContentStyle}>
+        <Box sx={settingRowLabelStyle}>{label}</Box>
+        {desc && <Box sx={settingRowDescStyle}>{desc}</Box>}
       </Box>
       {right}
     </Box>
@@ -110,7 +104,6 @@ export default function ScheduleTab() {
   const [apiKey,      setApiKey]      = useState('')
   const [showKey,     setShowKey]     = useState(false)
   const [saving,      setSaving]      = useState(false)
-  // Replaces statusText/statusColor state: null means show the derived status
   const [saveFeedback, setSaveFeedback] = useState<StatusInfo | null>(null)
 
   useEffect(() => {
@@ -166,42 +159,21 @@ export default function ScheduleTab() {
     }
   }
 
-  const inputSx = (hasError: boolean) => ({
-    width: '48px', height: '32px', padding: '0 10px',
-    border: `1px solid ${hasError ? Colors.red : Colors.border}`, borderRadius: '8px',
-    background: Colors.bg, color: Colors.text,
-    fontSize: '14px', fontWeight: 600, textAlign: 'center',
-    outline: 'none', transition: 'border-color .15s, box-shadow .15s',
-    boxShadow: hasError ? `0 0 0 3px rgba(204,16,22,.15)` : 'none',
-    '&:focus': {
-      borderColor: hasError ? Colors.red : Colors.blue,
-      boxShadow: hasError ? '0 0 0 3px rgba(204,16,22,.15)' : '0 0 0 3px rgba(10,102,194,.15)',
-    },
-  })
-
   const { text: statusText, color: statusColor } = saveFeedback ?? deriveStatus(enabled, days, hour, minute)
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, background: Colors.bg, overflow: 'hidden' }}>
+    <Box sx={scheduleTabRootStyle}>
 
       {/* Header */}
-      <Box sx={{
-        display: 'flex', alignItems: 'center',
-        padding: '11px 20px', background: Colors.bgSurface,
-        borderBottom: `1px solid ${Colors.border}`, flexShrink: 0,
-      }}>
-        <Box sx={{ fontSize: '14px', fontWeight: 700, color: Colors.text }}>Scheduled Run</Box>
+      <Box sx={scheduleTabHeaderStyle}>
+        <Box sx={scheduleTabHeaderTitleStyle}>Scheduled Run</Box>
       </Box>
 
       {/* Body */}
-      <Box
-        sx={{
-          flex: 1, overflowY: 'auto', padding: '24px',
-          display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '640px',
-        }}
-      >
+      <Box sx={scheduleTabBodyStyle}>
+
         {/* Section 1 */}
-        <Box sx={{ background: Colors.bgSurface, border: `1px solid ${Colors.border}`, borderRadius: '10px', overflow: 'hidden' }}>
+        <Box sx={scheduleTabSectionStyle}>
           <SettingRow
             label="Enable daily schedule"
             desc="Automatically run the scraper on selected days at a set time."
@@ -212,29 +184,20 @@ export default function ScheduleTab() {
             label="Run on"
             disabled={!enabled}
             right={
-              <Box sx={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <Box sx={scheduleTabDaysContainerStyle}>
                 {DAY_NAMES.map((name, d) => {
                   const sel = days.includes(d)
                   return (
-                    <Box key={d} component="label" sx={{ cursor: 'pointer' }}>
+                    <Box key={d} component="label" sx={scheduleTabDayLabelStyle}>
                       <Box
                         component="input"
                         type="checkbox"
                         checked={sel}
                         disabled={!enabled}
                         onChange={() => toggleDay(d)}
-                        sx={{ display: 'none' }}
+                        sx={scheduleTabDayCheckboxStyle}
                       />
-                      <Box sx={{
-                        display: 'inline-block', width: '38px', height: '32px', lineHeight: '32px',
-                        textAlign: 'center', borderRadius: '8px', fontSize: '12px', fontWeight: 700,
-                        border: `1px solid ${sel ? Colors.blue : Colors.border}`,
-                        background: sel ? Colors.blue : Colors.bg,
-                        color: sel ? '#fff' : Colors.muted,
-                        transition: 'background .15s, color .15s, border-color .15s',
-                        userSelect: 'none',
-                        '&:hover': !enabled ? {} : { borderColor: Colors.blue, color: sel ? '#fff' : Colors.blue },
-                      }}>
+                      <Box sx={scheduleTabDayBoxStyle(sel, enabled)}>
                         {name}
                       </Box>
                     </Box>
@@ -248,7 +211,7 @@ export default function ScheduleTab() {
             label="Run at"
             disabled={!enabled}
             right={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+              <Box sx={scheduleTabTimeInputsStyle}>
                 <Box
                   component="input"
                   type="text"
@@ -258,9 +221,9 @@ export default function ScheduleTab() {
                   autoComplete="off"
                   disabled={!enabled}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setHour(e.target.value); setHourError(false) }}
-                  sx={inputSx(hourError)}
+                  sx={scheduleTabTimeInputStyle(hourError)}
                 />
-                <Box component="span" sx={{ fontSize: '14px', fontWeight: 600, color: Colors.muted }}>:</Box>
+                <Box component="span" sx={scheduleTabColonStyle}>:</Box>
                 <Box
                   component="input"
                   type="text"
@@ -270,7 +233,7 @@ export default function ScheduleTab() {
                   autoComplete="off"
                   disabled={!enabled}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setMinute(e.target.value); setMinuteError(false) }}
-                  sx={inputSx(minuteError)}
+                  sx={scheduleTabTimeInputStyle(minuteError)}
                 />
               </Box>
             }
@@ -284,12 +247,12 @@ export default function ScheduleTab() {
         </Box>
 
         {/* Section 2 — API key */}
-        <Box sx={{ background: Colors.bgSurface, border: `1px solid ${Colors.border}`, borderRadius: '10px', overflow: 'hidden' }}>
+        <Box sx={scheduleTabSectionStyle}>
           <SettingRow
             label="Anthropic API Key"
             desc="Used by the scheduled run. Stored locally, never committed."
           />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 20px 16px' }}>
+          <Box sx={scheduleTabApiKeyBodyStyle}>
             <Box
               component="input"
               type={showKey ? 'text' : 'password'}
@@ -298,26 +261,13 @@ export default function ScheduleTab() {
               autoComplete="off"
               spellCheck={false}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApiKey(e.target.value)}
-              sx={{
-                flex: 1, height: '34px', padding: '0 12px',
-                border: `1px solid ${Colors.border}`, borderRadius: '8px',
-                background: Colors.bg, color: Colors.text,
-                fontSize: '13px',
-                fontFamily: "'SF Mono','Fira Code',monospace",
-                outline: 'none', transition: 'border-color .15s, box-shadow .15s',
-                '&::placeholder': { color: Colors.muted, fontFamily: 'inherit' },
-                '&:focus': { borderColor: Colors.blue, boxShadow: '0 0 0 3px rgba(10,102,194,.15)' },
-              }}
+              sx={scheduleTabApiKeyInputStyle}
             />
             <Box
               component="button"
               onClick={() => setShowKey(v => !v)}
               title="Show / hide"
-              sx={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '16px', padding: '4px', opacity: 0.6, transition: 'opacity .15s',
-                '&:hover': { opacity: 1 },
-              }}
+              sx={scheduleTabShowKeyButtonStyle}
             >
               👁
             </Box>
@@ -325,22 +275,15 @@ export default function ScheduleTab() {
         </Box>
 
         {/* Footer */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
-          <Box sx={{ fontSize: '12px', fontWeight: 600, color: statusColor }}>
+        <Box sx={scheduleTabFooterStyle}>
+          <Box sx={scheduleTabStatusTextStyle(statusColor)}>
             {statusText}
           </Box>
           <Box
             component="button"
             disabled={saving}
             onClick={handleSave}
-            sx={{
-              background: saving ? Colors.muted : Colors.blue, color: '#fff',
-              border: 'none', borderRadius: '20px',
-              padding: '9px 24px', fontSize: '13px', fontWeight: 700,
-              cursor: saving ? 'default' : 'pointer',
-              transition: 'background .15s',
-              '&:hover': saving ? {} : { background: Colors.blueLight },
-            }}
+            sx={scheduleTabSaveButtonStyle(saving)}
           >
             {saving ? 'Applying…' : 'Save & Apply'}
           </Box>
