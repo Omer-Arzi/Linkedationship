@@ -9,6 +9,10 @@ node_modules/
 # Personal filters
 config_local.py
 
+# Schedule
+schedule_settings.json
+linkedin-jobs/logs/
+
 # Personal data
 linkedin_jobs_connections.csv
 resume_sent.json

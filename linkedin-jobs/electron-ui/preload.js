@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('api', {
   continueLogin     : ()      => ipcRenderer.send('continue-login'),
   loadCSV           : ()      => ipcRenderer.invoke('load-csv'),
   openURL           : (url)   => ipcRenderer.send('open-url', url),
-  loadResumeState   : ()      => ipcRenderer.invoke('load-resume-state'),
-  saveResumeState   : (state) => ipcRenderer.send('save-resume-state', state),
+  loadResumeState       : ()       => ipcRenderer.invoke('load-resume-state'),
+  saveResumeState       : (state)  => ipcRenderer.send('save-resume-state', state),
+  loadScheduleSettings  : ()       => ipcRenderer.invoke('load-schedule-settings'),
+  applySchedule         : (settings) => ipcRenderer.invoke('apply-schedule', settings),
 })

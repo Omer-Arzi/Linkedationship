@@ -270,6 +270,113 @@ async function loadResults() {
   })
 }
 
+// ── Settings tab ─────────────────────────────────────────────────────────────
+
+const schedEnabled = document.getElementById('sched-enabled')
+const schedHour    = document.getElementById('sched-hour')
+const schedMinute  = document.getElementById('sched-minute')
+const schedConfirm = document.getElementById('sched-confirm')
+const schedApiKey  = document.getElementById('sched-apikey')
+const schedSave    = document.getElementById('sched-save')
+const schedStatus  = document.getElementById('sched-status')
+const rowHour      = document.getElementById('row-hour')
+const toggleKeyVis = document.getElementById('toggle-key-vis')
+
+async function loadScheduleSettings() {
+  const s = await window.api.loadScheduleSettings()
+  schedEnabled.checked  = !!s.enabled
+  schedHour.value       = String(s.hour ?? 8).padStart(2, '0')
+  schedMinute.value     = String(s.minute ?? 0).padStart(2, '0')
+  schedConfirm.checked  = !!s.requireConfirmation
+  schedApiKey.value    = s.apiKey ?? ''
+  updateSchedUI()
+}
+
+function parseHour(val) {
+  const n = parseInt(val.trim(), 10)
+  return (!isNaN(n) && n >= 0 && n <= 23) ? n : null
+}
+
+function parseMinute(val) {
+  const n = parseInt(val.trim(), 10)
+  return (!isNaN(n) && n >= 0 && n <= 59) ? n : null
+}
+
+function updateSchedUI() {
+  rowHour.classList.toggle('disabled', !schedEnabled.checked)
+  schedHour.disabled   = !schedEnabled.checked
+  schedMinute.disabled = !schedEnabled.checked
+  const h = parseHour(schedHour.value)
+  const m = parseMinute(schedMinute.value)
+  const valid = h !== null && m !== null
+  if (schedEnabled.checked && valid) {
+    const time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+    schedStatus.textContent = `● Schedule active — runs Mon–Fri at ${time}`
+    schedStatus.className = 'sched-status status-active'
+  } else if (schedEnabled.checked && !valid) {
+    schedStatus.textContent = '⚠ Enter a valid time (hour 0–23, minute 0–59)'
+    schedStatus.className = 'sched-status status-error'
+  } else {
+    schedStatus.textContent = '● Schedule inactive'
+    schedStatus.className = 'sched-status status-inactive'
+  }
+}
+
+schedHour.addEventListener('input', () => {
+  schedHour.classList.toggle('input-error', schedEnabled.checked && parseHour(schedHour.value) === null)
+  updateSchedUI()
+})
+
+schedMinute.addEventListener('input', () => {
+  schedMinute.classList.toggle('input-error', schedEnabled.checked && parseMinute(schedMinute.value) === null)
+  updateSchedUI()
+})
+
+schedEnabled.addEventListener('change', updateSchedUI)
+schedHour.addEventListener('change', updateSchedUI)
+
+toggleKeyVis.addEventListener('click', () => {
+  schedApiKey.type = schedApiKey.type === 'password' ? 'text' : 'password'
+})
+
+schedSave.addEventListener('click', async () => {
+  const h = parseHour(schedHour.value)
+  const m = parseMinute(schedMinute.value)
+  if (schedEnabled.checked && (h === null || m === null)) {
+    if (h === null) { schedHour.classList.add('input-error'); schedHour.focus() }
+    else            { schedMinute.classList.add('input-error'); schedMinute.focus() }
+    return
+  }
+
+  schedSave.disabled = true
+  schedSave.textContent = 'Applying…'
+
+  const settings = {
+    enabled:             schedEnabled.checked,
+    hour:                h ?? 8,
+    minute:              m ?? 0,
+    requireConfirmation: schedConfirm.checked,
+    apiKey:              schedApiKey.value.trim(),
+  }
+
+  const result = await window.api.applySchedule(settings)
+  schedSave.disabled = false
+  schedSave.textContent = 'Save & Apply'
+
+  if (result.ok) {
+    schedStatus.textContent = settings.enabled
+      ? `✓ Applied — runs Mon–Fri at ${schedHour.options[schedHour.selectedIndex].text}`
+      : '✓ Applied — schedule inactive'
+    schedStatus.className = 'sched-status status-ok'
+    setTimeout(updateSchedUI, 2500)
+  } else {
+    schedStatus.textContent = `✗ Error: ${result.error}`
+    schedStatus.className = 'sched-status status-error'
+  }
+})
+
+loadScheduleSettings()
+
 function formatDate(iso) {
   if (!iso || iso === 'Unknown date') return iso
   try {
