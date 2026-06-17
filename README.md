@@ -92,7 +92,7 @@ All settings live in `linkedin-jobs/config.py`:
 MAX_PAGES = 7               # how many pages of the jobs feed to scrape
 PAGE_DELAY = 2.5            # seconds to wait after loading each job page
 
-BLACKLIST = {"moveo", ...}  # skip jobs from these companies
+BLACKLIST = {"company-a", ...}  # skip jobs from these companies
 
 TITLE_BLACKLIST = {"qa", "automation", ...}  # skip jobs containing these title keywords
 
@@ -117,7 +117,7 @@ MAX_PAGES=3 python linkedin_jobs.py
 
 ```
 Date,Company,Job Title,URL,Connections
-2026-06-17,Acme Corp,Software Engineer,https://linkedin.com/jobs/view/...,Jane Smith; Bob Lee
+2026-06-17,Some Company,Software Engineer,https://linkedin.com/jobs/view/...,Jane Smith; Bob Lee
 ```
 
 ---
