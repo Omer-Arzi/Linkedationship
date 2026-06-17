@@ -1,0 +1,14 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# Personal data
+linkedin_jobs_connections.csv
+resume_sent.json
+
+# Debug dumps
+jobs_page.html

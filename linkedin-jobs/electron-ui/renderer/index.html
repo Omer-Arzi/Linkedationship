@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'" />
+  <title>LinkedIn Jobs Scraper</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ── Header ── -->
+    <header class="header">
+      <div class="header-left">
+        <span class="header-dot dot-red"></span>
+        <span class="header-dot dot-yellow"></span>
+        <span class="header-dot dot-green"></span>
+      </div>
+      <span class="header-title">LinkedIn Jobs Scraper</span>
+      <div class="header-right">
+        <span id="status-badge" class="badge badge-idle">idle</span>
+      </div>
+    </header>
+
+    <!-- ── Body ── -->
+    <div class="body">
+
+      <!-- ── Sidebar ── -->
+      <nav class="sidebar">
+        <button class="nav-item" data-tab="script">
+          <span class="nav-icon">▶</span>
+          <span class="nav-label">Script</span>
+        </button>
+        <button class="nav-item active" data-tab="files">
+          <span class="nav-icon">⊞</span>
+          <span class="nav-label">Results</span>
+        </button>
+      </nav>
+
+      <!-- ── Tab: Script ── -->
+      <div id="tab-script" class="tab-content panels">
+
+        <!-- Left: live browser screencast -->
+        <section class="panel panel-browser">
+          <div class="panel-label">Browser</div>
+          <div class="browser-wrap">
+            <img id="browser-img" alt="" />
+            <div id="browser-placeholder" class="browser-placeholder">
+              <button id="start-btn" class="btn-start">▶ Start Searching</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: logs -->
+        <section class="panel panel-logs">
+          <div class="panel-label">Logs</div>
+
+          <!-- Login banner — shown when Python needs the user to log in -->
+          <div id="login-banner" class="login-banner hidden">
+            <span>Restore the Chromium window from the dock to log in, then click</span>
+            <button id="continue-btn" class="btn-continue-sm">Continue →</button>
+          </div>
+
+          <div id="log-container" class="log-container"></div>
+          <div id="done-banner" class="done-banner hidden">
+            <span>✓ Done — check <code>linkedin_jobs_connections.csv</code></span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ── Tab: Results ── -->
+      <div id="tab-files" class="tab-content active files-view">
+        <div class="files-header">
+          <span class="files-title">Saved Results</span>
+          <div class="files-header-right">
+            <div id="cv-filter" class="cv-filter" data-value="all">
+              <span class="cv-filter-label">All</span>
+              <svg class="cv-filter-arrow" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg>
+              <ul class="cv-filter-menu">
+                <li data-value="all">All</li>
+                <li data-value="sent">Sent CV</li>
+                <li data-value="unsent">Not Sent</li>
+              </ul>
+            </div>
+            <input id="search-input" class="search-input" type="text" placeholder="Search…" autocomplete="off" />
+            <button id="refresh-btn" class="btn-refresh">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="files-body" class="files-body">
+          <div class="files-empty">No results yet — run the script first.</div>
+        </div>
+      </div>
+
+    </div><!-- /.body -->
+  </div><!-- /.app -->
+
+  <script src="renderer.js"></script>
+</body>
+</html>
