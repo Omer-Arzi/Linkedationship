@@ -85,7 +85,7 @@
             <div class="setting-row">
               <div class="setting-info">
                 <span class="setting-label">Enable daily schedule</span>
-                <span class="setting-desc">Automatically run the scraper Mon–Fri at a set time.</span>
+                <span class="setting-desc">Automatically run the scraper on selected days at a set time.</span>
               </div>
               <label class="toggle">
                 <input type="checkbox" id="sched-enabled">
@@ -93,10 +93,24 @@
               </label>
             </div>
 
+            <div class="setting-row" id="row-days">
+              <div class="setting-info">
+                <span class="setting-label">Run on</span>
+              </div>
+              <div class="day-picker">
+                <label class="day-chip"><input type="checkbox" data-day="0"><span>Sun</span></label>
+                <label class="day-chip"><input type="checkbox" data-day="1"><span>Mon</span></label>
+                <label class="day-chip"><input type="checkbox" data-day="2"><span>Tue</span></label>
+                <label class="day-chip"><input type="checkbox" data-day="3"><span>Wed</span></label>
+                <label class="day-chip"><input type="checkbox" data-day="4"><span>Thu</span></label>
+                <label class="day-chip"><input type="checkbox" data-day="5"><span>Fri</span></label>
+                <label class="day-chip"><input type="checkbox" data-day="6"><span>Sat</span></label>
+              </div>
+            </div>
+
             <div class="setting-row" id="row-hour">
               <div class="setting-info">
                 <span class="setting-label">Run at</span>
-                <span class="setting-desc">Monday through Friday only.</span>
               </div>
               <div class="hour-input-wrap">
                 <input type="text" id="sched-hour" class="hour-input" placeholder="08" maxlength="2" autocomplete="off">

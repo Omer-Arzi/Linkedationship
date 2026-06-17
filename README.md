@@ -146,14 +146,15 @@ Date,Company,Job Title,URL,Connections
 
 ## Scheduled runs
 
-The **Schedule tab** inside the Electron UI lets you configure the scraper to run automatically every weekday without opening the app.
+The **Schedule tab** inside the Electron UI lets you configure the scraper to run automatically on any days you choose, without opening the app.
 
 ### Settings
 
 | Setting | Description |
 |---|---|
-| Enable daily schedule | Installs a macOS launch agent that triggers the scraper Mon–Fri at the chosen time |
-| Run at | Time in 24-hour format (e.g. `08:30`). Only active on weekdays |
+| Enable daily schedule | Installs a macOS launch agent that triggers the scraper on selected days at the chosen time |
+| Run on | Day checkboxes (Sun–Sat). Select any combination. Defaults to Sun–Thu |
+| Run at | Time in 24-hour format (e.g. `08:30`) |
 | Require confirmation | Before each scheduled run, a native macOS dialog appears asking "Run now?" — you can skip it. Auto-dismisses after 30 seconds if ignored |
 | Anthropic API Key | Optional — only needed if you want Claude features in scheduled runs. Leave blank if you store the key in Keychain (recommended) |
 

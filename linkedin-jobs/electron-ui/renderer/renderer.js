@@ -272,23 +272,37 @@ async function loadResults() {
 
 // ── Settings tab ─────────────────────────────────────────────────────────────
 
-const schedEnabled = document.getElementById('sched-enabled')
-const schedHour    = document.getElementById('sched-hour')
-const schedMinute  = document.getElementById('sched-minute')
-const schedConfirm = document.getElementById('sched-confirm')
-const schedApiKey  = document.getElementById('sched-apikey')
-const schedSave    = document.getElementById('sched-save')
-const schedStatus  = document.getElementById('sched-status')
-const rowHour      = document.getElementById('row-hour')
-const toggleKeyVis = document.getElementById('toggle-key-vis')
+const DAY_NAMES    = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const DEFAULT_DAYS = [0, 1, 2, 3, 4] // Sun–Thu
+
+const schedEnabled  = document.getElementById('sched-enabled')
+const schedHour     = document.getElementById('sched-hour')
+const schedMinute   = document.getElementById('sched-minute')
+const schedConfirm  = document.getElementById('sched-confirm')
+const schedApiKey   = document.getElementById('sched-apikey')
+const schedSave     = document.getElementById('sched-save')
+const schedStatus   = document.getElementById('sched-status')
+const rowHour       = document.getElementById('row-hour')
+const rowDays       = document.getElementById('row-days')
+const toggleKeyVis  = document.getElementById('toggle-key-vis')
+const dayCheckboxes = Array.from(document.querySelectorAll('.day-chip input[type="checkbox"]'))
+
+function getSelectedDays() {
+  return dayCheckboxes.filter(cb => cb.checked).map(cb => parseInt(cb.dataset.day, 10))
+}
+
+function setSelectedDays(days) {
+  dayCheckboxes.forEach(cb => { cb.checked = days.includes(parseInt(cb.dataset.day, 10)) })
+}
 
 async function loadScheduleSettings() {
   const s = await window.api.loadScheduleSettings()
-  schedEnabled.checked  = !!s.enabled
-  schedHour.value       = String(s.hour ?? 8).padStart(2, '0')
-  schedMinute.value     = String(s.minute ?? 0).padStart(2, '0')
-  schedConfirm.checked  = !!s.requireConfirmation
+  schedEnabled.checked = !!s.enabled
+  schedHour.value      = String(s.hour   ?? 8).padStart(2, '0')
+  schedMinute.value    = String(s.minute ?? 0).padStart(2, '0')
+  schedConfirm.checked = !!s.requireConfirmation
   schedApiKey.value    = s.apiKey ?? ''
+  setSelectedDays(s.days ?? DEFAULT_DAYS)
   updateSchedUI()
 }
 
@@ -303,56 +317,71 @@ function parseMinute(val) {
 }
 
 function updateSchedUI() {
-  rowHour.classList.toggle('disabled', !schedEnabled.checked)
-  schedHour.disabled   = !schedEnabled.checked
-  schedMinute.disabled = !schedEnabled.checked
-  const h = parseHour(schedHour.value)
-  const m = parseMinute(schedMinute.value)
+  const on = schedEnabled.checked
+  rowHour.classList.toggle('disabled', !on)
+  rowDays.classList.toggle('disabled', !on)
+  schedHour.disabled   = !on
+  schedMinute.disabled = !on
+  dayCheckboxes.forEach(cb => { cb.disabled = !on })
+
+  const h    = parseHour(schedHour.value)
+  const m    = parseMinute(schedMinute.value)
+  const days = getSelectedDays()
   const valid = h !== null && m !== null
-  if (schedEnabled.checked && valid) {
-    const time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
-    schedStatus.textContent = `● Schedule active — runs Mon–Fri at ${time}`
-    schedStatus.className = 'sched-status status-active'
-  } else if (schedEnabled.checked && !valid) {
+
+  if (on && valid && days.length > 0) {
+    const time    = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+    const dayList = days.sort((a,b) => a-b).map(d => DAY_NAMES[d]).join(', ')
+    schedStatus.textContent = `● Active — ${dayList} at ${time}`
+    schedStatus.className   = 'sched-status status-active'
+  } else if (on && !valid) {
     schedStatus.textContent = '⚠ Enter a valid time (hour 0–23, minute 0–59)'
-    schedStatus.className = 'sched-status status-error'
+    schedStatus.className   = 'sched-status status-error'
+  } else if (on && days.length === 0) {
+    schedStatus.textContent = '⚠ Select at least one day'
+    schedStatus.className   = 'sched-status status-error'
   } else {
     schedStatus.textContent = '● Schedule inactive'
-    schedStatus.className = 'sched-status status-inactive'
+    schedStatus.className   = 'sched-status status-inactive'
   }
 }
 
+schedEnabled.addEventListener('change', updateSchedUI)
+dayCheckboxes.forEach(cb => cb.addEventListener('change', updateSchedUI))
 schedHour.addEventListener('input', () => {
   schedHour.classList.toggle('input-error', schedEnabled.checked && parseHour(schedHour.value) === null)
   updateSchedUI()
 })
-
 schedMinute.addEventListener('input', () => {
   schedMinute.classList.toggle('input-error', schedEnabled.checked && parseMinute(schedMinute.value) === null)
   updateSchedUI()
 })
-
-schedEnabled.addEventListener('change', updateSchedUI)
-schedHour.addEventListener('change', updateSchedUI)
 
 toggleKeyVis.addEventListener('click', () => {
   schedApiKey.type = schedApiKey.type === 'password' ? 'text' : 'password'
 })
 
 schedSave.addEventListener('click', async () => {
-  const h = parseHour(schedHour.value)
-  const m = parseMinute(schedMinute.value)
-  if (schedEnabled.checked && (h === null || m === null)) {
-    if (h === null) { schedHour.classList.add('input-error'); schedHour.focus() }
-    else            { schedMinute.classList.add('input-error'); schedMinute.focus() }
-    return
+  const h    = parseHour(schedHour.value)
+  const m    = parseMinute(schedMinute.value)
+  const days = getSelectedDays()
+
+  if (schedEnabled.checked) {
+    if (h === null) { schedHour.classList.add('input-error'); schedHour.focus(); return }
+    if (m === null) { schedMinute.classList.add('input-error'); schedMinute.focus(); return }
+    if (days.length === 0) {
+      schedStatus.textContent = '⚠ Select at least one day'
+      schedStatus.className   = 'sched-status status-error'
+      return
+    }
   }
 
-  schedSave.disabled = true
+  schedSave.disabled    = true
   schedSave.textContent = 'Applying…'
 
   const settings = {
     enabled:             schedEnabled.checked,
+    days,
     hour:                h ?? 8,
     minute:              m ?? 0,
     requireConfirmation: schedConfirm.checked,
@@ -360,18 +389,20 @@ schedSave.addEventListener('click', async () => {
   }
 
   const result = await window.api.applySchedule(settings)
-  schedSave.disabled = false
+  schedSave.disabled    = false
   schedSave.textContent = 'Save & Apply'
 
   if (result.ok) {
+    const time    = `${String(settings.hour).padStart(2,'0')}:${String(settings.minute).padStart(2,'0')}`
+    const dayList = days.sort((a,b) => a-b).map(d => DAY_NAMES[d]).join(', ')
     schedStatus.textContent = settings.enabled
-      ? `✓ Applied — runs Mon–Fri at ${schedHour.options[schedHour.selectedIndex].text}`
+      ? `✓ Applied — ${dayList} at ${time}`
       : '✓ Applied — schedule inactive'
     schedStatus.className = 'sched-status status-ok'
     setTimeout(updateSchedUI, 2500)
   } else {
     schedStatus.textContent = `✗ Error: ${result.error}`
-    schedStatus.className = 'sched-status status-error'
+    schedStatus.className   = 'sched-status status-error'
   }
 })
 

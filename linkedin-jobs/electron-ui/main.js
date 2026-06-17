@@ -242,7 +242,8 @@ function buildPlist(settings) {
   const logFile    = path.join(logsDir, 'scraper.log')
   if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir)
 
-  const weekdayEntries = [1, 2, 3, 4, 5].map(d => `
+  const days = (settings.days && settings.days.length > 0) ? settings.days : [0, 1, 2, 3, 4]
+  const weekdayEntries = days.map(d => `
         <dict>
             <key>Weekday</key><integer>${d}</integer>
             <key>Hour</key><integer>${settings.hour}</integer>
