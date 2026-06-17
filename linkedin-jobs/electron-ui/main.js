@@ -1,13 +1,18 @@
 const { app, BrowserWindow, ipcMain, shell } = require('electron')
-const { spawn } = require('child_process')
+const { spawn, execSync } = require('child_process')
 const WebSocket = require('ws')
 const http = require('http')
+const os   = require('os')
 const fs   = require('fs')
 const path = require('path')
 
-const CDP_PORT    = 9222
-const CSV_PATH    = path.join(__dirname, '..', 'linkedin_jobs_connections.csv')
-const RESUME_PATH = path.join(__dirname, '..', 'resume_sent.json')
+const CDP_PORT      = 9222
+const SCRIPTS_DIR   = path.join(__dirname, '..')
+const CSV_PATH      = path.join(SCRIPTS_DIR, 'linkedin_jobs_connections.csv')
+const RESUME_PATH   = path.join(SCRIPTS_DIR, 'resume_sent.json')
+const SCHED_SETTINGS_PATH = path.join(SCRIPTS_DIR, 'schedule_settings.json')
+const PLIST_LABEL   = 'com.linkedationship.scraper'
+const PLIST_PATH    = path.join(os.homedir(), 'Library', 'LaunchAgents', `${PLIST_LABEL}.plist`)
 
 let mainWindow
 let pythonProcess
@@ -219,6 +224,81 @@ ipcMain.on('save-resume-state', (_, state) => {
 
 ipcMain.on('continue-login', () => {
   if (pythonProcess?.stdin) pythonProcess.stdin.write('\n')
+})
+
+// ── Schedule settings ─────────────────────────────────────────────────────────
+
+function loadScheduleSettings() {
+  if (!fs.existsSync(SCHED_SETTINGS_PATH)) {
+    return { enabled: false, hour: 8, requireConfirmation: true, apiKey: '' }
+  }
+  try { return JSON.parse(fs.readFileSync(SCHED_SETTINGS_PATH, 'utf-8')) }
+  catch (_) { return { enabled: false, hour: 8, requireConfirmation: true, apiKey: '' } }
+}
+
+function buildPlist(settings) {
+  const scriptPath = path.join(SCRIPTS_DIR, 'run_scheduled.sh')
+  const logsDir    = path.join(SCRIPTS_DIR, 'logs')
+  const logFile    = path.join(logsDir, 'scraper.log')
+  if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir)
+
+  const weekdayEntries = [1, 2, 3, 4, 5].map(d => `
+        <dict>
+            <key>Weekday</key><integer>${d}</integer>
+            <key>Hour</key><integer>${settings.hour}</integer>
+            <key>Minute</key><integer>${settings.minute ?? 0}</integer>
+        </dict>`).join('')
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${PLIST_LABEL}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>${scriptPath}</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <array>${weekdayEntries}
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>ANTHROPIC_API_KEY</key>
+        <string>${settings.apiKey || ''}</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>${logFile}</string>
+    <key>StandardErrorPath</key>
+    <string>${logFile}</string>
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>`
+}
+
+ipcMain.handle('load-schedule-settings', () => loadScheduleSettings())
+
+ipcMain.handle('apply-schedule', (_, settings) => {
+  try {
+    fs.writeFileSync(SCHED_SETTINGS_PATH, JSON.stringify(settings, null, 2), 'utf-8')
+
+    // Unload existing plist if present
+    if (fs.existsSync(PLIST_PATH)) {
+      try { execSync(`launchctl unload "${PLIST_PATH}"`, { stdio: 'ignore' }) } catch (_) {}
+      fs.unlinkSync(PLIST_PATH)
+    }
+
+    if (settings.enabled) {
+      fs.writeFileSync(PLIST_PATH, buildPlist(settings), 'utf-8')
+      execSync(`launchctl load "${PLIST_PATH}"`)
+    }
+
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
 })
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────

@@ -36,6 +36,10 @@
           <span class="nav-icon">⊞</span>
           <span class="nav-label">Results</span>
         </button>
+        <button class="nav-item" data-tab="settings">
+          <span class="nav-icon">⚙</span>
+          <span class="nav-label">Schedule</span>
+        </button>
       </nav>
 
       <!-- ── Tab: Script ── -->
@@ -68,6 +72,70 @@
           </div>
         </section>
 
+      </div>
+
+      <!-- ── Tab: Settings ── -->
+      <div id="tab-settings" class="tab-content settings-view">
+        <div class="settings-header">
+          <span class="settings-title">Scheduled Run</span>
+        </div>
+        <div class="settings-body">
+
+          <div class="settings-section">
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Enable daily schedule</span>
+                <span class="setting-desc">Automatically run the scraper Mon–Fri at a set time.</span>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="sched-enabled">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+
+            <div class="setting-row" id="row-hour">
+              <div class="setting-info">
+                <span class="setting-label">Run at</span>
+                <span class="setting-desc">Monday through Friday only.</span>
+              </div>
+              <div class="hour-input-wrap">
+                <input type="text" id="sched-hour" class="hour-input" placeholder="08" maxlength="2" autocomplete="off">
+                <span class="hour-colon">:</span>
+                <input type="text" id="sched-minute" class="hour-input" placeholder="00" maxlength="2" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Require confirmation</span>
+                <span class="setting-desc">Show a dialog at the scheduled time so you can skip the run if needed.</span>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="sched-confirm">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Anthropic API Key</span>
+                <span class="setting-desc">Used by the scheduled run. Stored locally, never committed.</span>
+              </div>
+            </div>
+            <div class="api-key-row">
+              <input type="password" id="sched-apikey" class="api-key-input" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+              <button id="toggle-key-vis" class="btn-icon" title="Show / hide">👁</button>
+            </div>
+          </div>
+
+          <div class="settings-footer">
+            <div id="sched-status" class="sched-status status-inactive">● Schedule inactive</div>
+            <button id="sched-save" class="btn-save">Save &amp; Apply</button>
+          </div>
+
+        </div>
       </div>
 
       <!-- ── Tab: Results ── -->

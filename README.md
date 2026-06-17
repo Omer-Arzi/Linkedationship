@@ -7,7 +7,7 @@ A LinkedIn job scraper that scans your recommended jobs feed and filters to posi
 ## How it works
 
 1. **Collect** — Playwright opens a persistent Chrome browser and scrolls through your LinkedIn recommended jobs feed, collecting job cards across multiple pages.
-2. **Filter** — Each job is checked against blacklists: company name, job title keywords, and skill requirements (e.g. skip PHP jobs entirely, skip Python jobs requiring 4+ years).
+2. **Filter** — Each job is checked against blacklists: company name, job title keywords, and skill requirements (e.g. skip jobs for a specific skill entirely, or only if they require more than N years).
 3. **Connections** — For each job that passes the filters, the scraper visits the job page and looks for mutual connections shown in LinkedIn's insight panels. Three strategies are tried in order:
    - CSS selector scraping (Premium insight panel)
    - Text blurb detection ("X connections at this company")
@@ -23,7 +23,7 @@ Two Claude models are used as intelligent fallbacks:
 | Step | Model | Purpose |
 |---|---|---|
 | Connection extraction | `claude-opus-4-8` | Reads the job page text and returns a JSON array of connection names when CSS selectors find nothing |
-| Skill filtering | `claude-haiku-4-5-20251001` | Reads the job description and determines whether any skill blacklist rules are triggered (e.g. "requires C++", "requires Python 5+ years") |
+| Skill filtering | `claude-haiku-4-5-20251001` | Reads the job description and determines whether any skill blacklist rules are triggered |
 
 Claude is only called when the simpler CSS/regex approaches fail. If no `ANTHROPIC_API_KEY` is set, both models are skipped and only the CSS/regex fallback is used.
 
@@ -44,16 +44,23 @@ This creates a Python virtual environment, installs `playwright` and `anthropic`
 
 ### Option A — Electron UI (recommended)
 
+From the project root:
+
 ```bash
-cd linkedin-jobs/electron-ui
-npm install          # first time only
-ANTHROPIC_API_KEY=your_key npm start
+./start.sh
 ```
 
-The app opens with two tabs:
+The first run installs Node dependencies automatically. To pass your API key:
 
-- **Script tab** — a live screencast of the Playwright browser on the left, and a color-coded log on the right. Click **▶ Start Searching** to run. If LinkedIn asks you to log in, a banner appears — log in in the Chromium window that opens in the dock, then click **Continue →**.
-- **Results tab** — a table of all saved jobs, grouped by date. Jobs from the last 5 days are expanded by default; older ones are collapsed.
+```bash
+ANTHROPIC_API_KEY=your_key ./start.sh
+```
+
+The app opens with three tabs:
+
+- **Script** — a live screencast of the Playwright browser on the left, color-coded logs on the right. Click **▶ Start Searching** to run. If LinkedIn asks you to log in, a banner appears — log in in the Chromium window that opens in the dock, then click **Continue →**.
+- **Results** — a table of all saved jobs, grouped by date. Jobs from the last 5 days are expanded by default; older ones are collapsed.
+- **Schedule** — configure automatic daily runs (see [Scheduled runs](#scheduled-runs) below).
 
 ### Option B — Terminal only
 
@@ -61,7 +68,7 @@ The app opens with two tabs:
 cd linkedin-jobs
 source venv/bin/activate
 export ANTHROPIC_API_KEY=your_key
-python linkedin_jobs.py
+python3 linkedin_jobs.py
 ```
 
 ---
@@ -121,7 +128,7 @@ If `config_local.py` is missing, all three filters default to empty (nothing is 
 
 You can also override `MAX_PAGES` via environment variable:
 ```bash
-MAX_PAGES=3 python linkedin_jobs.py
+MAX_PAGES=3 python3 linkedin_jobs.py
 ```
 
 ---
@@ -137,22 +144,65 @@ Date,Company,Job Title,URL,Connections
 
 ---
 
+## Scheduled runs
+
+The **Schedule tab** inside the Electron UI lets you configure the scraper to run automatically every weekday without opening the app.
+
+### Settings
+
+| Setting | Description |
+|---|---|
+| Enable daily schedule | Installs a macOS launch agent that triggers the scraper Mon–Fri at the chosen time |
+| Run at | Time in 24-hour format (e.g. `08:30`). Only active on weekdays |
+| Require confirmation | Before each scheduled run, a native macOS dialog appears asking "Run now?" — you can skip it. Auto-dismisses after 30 seconds if ignored |
+| Anthropic API Key | Optional — only needed if you want Claude features in scheduled runs. Leave blank if you store the key in Keychain (recommended) |
+
+Click **Save & Apply** to install or update the schedule. Disabling it and clicking Save removes the launch agent entirely.
+
+### API key for scheduled runs
+
+Scheduled runs happen outside your shell environment, so `ANTHROPIC_API_KEY` isn't automatically available. The key is resolved in this order:
+
+1. **macOS Keychain** (recommended) — store it once, never touch it again:
+   ```bash
+   security add-generic-password -a "$USER" -s "ANTHROPIC_API_KEY" -w "your-key-here"
+   ```
+2. **Settings field** — filled in the Schedule tab UI, stored in `schedule_settings.json` (gitignored)
+3. **Environment variable** — if already set in the shell that launched the script
+
+### Behavior when the Mac is asleep
+
+launchd waits until the machine is awake. If the scheduled time is missed (e.g. Mac was asleep at 8:00), the job runs once when the Mac wakes up — not once per missed run.
+
+### How it works under the hood
+
+- Saving writes `linkedin-jobs/schedule_settings.json` (gitignored) and generates a launchd plist at `~/Library/LaunchAgents/com.linkedationship.scraper.plist`
+- launchd calls `linkedin-jobs/run_scheduled.sh` at the scheduled time
+- If "Require confirmation" is on, the script shows a native macOS dialog via `osascript` before proceeding
+- Output is logged to `linkedin-jobs/logs/scraper.log`
+- The Electron UI does not need to be open for scheduled runs to work
+
+---
+
 ## Project structure
 
 ```
 Linkedationship/
+├── start.sh                          # launch the Electron UI from the project root
 ├── linkedin-jobs/
-│   ├── linkedin_jobs.py          # main scraper
-│   ├── config.py                 # all configuration
-│   ├── dump_html.py              # debug: saves raw LinkedIn HTML
+│   ├── linkedin_jobs.py              # main scraper
+│   ├── config.py                     # general configuration
+│   ├── config_local.example.py       # template for personal filters
+│   ├── config_local.py               # your filters — gitignored, fill this in
+│   ├── run_scheduled.sh              # called by launchd; handles confirmation dialog
+│   ├── dump_html.py                  # debug: saves raw LinkedIn HTML
 │   ├── requirements.txt
 │   ├── setup.sh
 │   └── electron-ui/
-│       ├── main.js               # Electron main process, spawns Python, bridges CDP
-│       ├── preload.js            # exposes IPC API to renderer
+│       ├── main.js                   # Electron main process: spawns Python, bridges CDP, manages launchd
+│       ├── preload.js                # exposes IPC API to renderer
 │       └── renderer/
 │           ├── index.html
-│           ├── renderer.js       # UI logic: screencast, logs, results table
+│           ├── renderer.js           # UI logic: screencast, logs, results table, schedule settings
 │           └── style.css
-└── index.jsx                     # unrelated React scratch file
 ```
