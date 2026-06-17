@@ -7,7 +7,8 @@ const fs   = require('fs')
 const path = require('path')
 
 const CDP_PORT      = 9222
-const SCRIPTS_DIR   = path.join(__dirname, '..')
+// out/main/ → electron-ui/ → linkedin-jobs/
+const SCRIPTS_DIR   = path.join(__dirname, '..', '..', '..')
 const CSV_PATH      = path.join(SCRIPTS_DIR, 'linkedin_jobs_connections.csv')
 const RESUME_PATH   = path.join(SCRIPTS_DIR, 'resume_sent.json')
 const SCHED_SETTINGS_PATH = path.join(SCRIPTS_DIR, 'schedule_settings.json')
@@ -26,7 +27,7 @@ function createWindow() {
     minWidth: 960,
     minHeight: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, '..', 'preload', 'index.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -34,10 +35,16 @@ function createWindow() {
     backgroundColor: '#E8EFF7',
     titleBarStyle: 'hiddenInset',
   })
-  if (process.env.ELECTRON_RENDERER_URL) {
-    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
+
+  // In dev mode electron-vite serves the renderer via a local dev server
+  if (process.env['ELECTRON_RENDERER_URL']) {
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'dist', 'renderer', 'index.html'))
+    if (process.env.ELECTRON_RENDERER_URL) {
+      mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
+    } else {
+      mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'))
+    }
   }
 }
 
@@ -137,11 +144,11 @@ async function connectCDP(retries = 50, delayMs = 500) {
 // ── Python subprocess ─────────────────────────────────────────────────────────
 
 function spawnPython() {
-  const pythonBin = path.join(__dirname, '..', 'venv', 'bin', 'python')
-  const script    = path.join(__dirname, '..', 'linkedin_jobs.py')
+  const pythonBin = path.join(SCRIPTS_DIR, 'venv', 'bin', 'python')
+  const script    = path.join(SCRIPTS_DIR, 'linkedin_jobs.py')
 
   pythonProcess = spawn(pythonBin, [script], {
-    cwd: path.join(__dirname, '..'),
+    cwd: SCRIPTS_DIR,
     env: { ...process.env, PYTHONUNBUFFERED: '1' },
     stdio: ['pipe', 'pipe', 'pipe'],
   })

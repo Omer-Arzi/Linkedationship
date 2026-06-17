@@ -19,3 +19,7 @@ resume_sent.json
 
 # Debug dumps
 jobs_page.html
+
+# electron-vite build output
+linkedin-jobs/electron-ui/dist/
+linkedin-jobs/electron-ui/out/
