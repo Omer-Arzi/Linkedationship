@@ -86,25 +86,40 @@ The Results tab reads directly from `linkedin_jobs_connections.csv` and displays
 
 ## Configuration
 
-All settings live in `linkedin-jobs/config.py`:
+General settings (page count, delays, selectors) live in `linkedin-jobs/config.py`.
+
+Personal filters are kept in a separate file that is **not committed to the repo**:
+
+```bash
+cp linkedin-jobs/config_local.example.py linkedin-jobs/config_local.py
+```
+
+Then edit `config_local.py` with your own values:
 
 ```python
-MAX_PAGES = 7               # how many pages of the jobs feed to scrape
-PAGE_DELAY = 2.5            # seconds to wait after loading each job page
+# Companies to skip entirely (case-insensitive substring match)
+BLACKLIST = {
+    "some company",
+}
 
-BLACKLIST = {"company-a", ...}  # skip jobs from these companies
+# Jobs whose title contains any of these keywords are skipped
+TITLE_BLACKLIST = {
+    "qa",
+    "automation",
+}
 
-TITLE_BLACKLIST = {"qa", "automation", ...}  # skip jobs containing these title keywords
-
+# Skill rules:
+#   None  → skip if the skill is mentioned at all
+#   N     → skip only if more than N years of experience are required
 SKILL_BLACKLIST = [
-    ("WordPress", None),    # skip if mentioned at all
-    ("PHP", None),
-    ("Python", 4),          # skip only if 4+ years required
-    ("C++", None),
+    ("SomeSkill", None),
+    ("AnotherSkill", 3),
 ]
 ```
 
-You can also set `MAX_PAGES` via environment variable:
+If `config_local.py` is missing, all three filters default to empty (nothing is skipped).
+
+You can also override `MAX_PAGES` via environment variable:
 ```bash
 MAX_PAGES=3 python linkedin_jobs.py
 ```

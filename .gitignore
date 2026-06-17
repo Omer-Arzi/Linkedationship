@@ -6,6 +6,9 @@ __pycache__/
 # Node
 node_modules/
 
+# Personal filters
+config_local.py
+
 # Personal data
 linkedin_jobs_connections.csv
 resume_sent.json

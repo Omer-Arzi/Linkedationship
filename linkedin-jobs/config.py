@@ -69,32 +69,11 @@ COL_URL         = "URL"
 COL_CONNECTIONS = "Connections"
 CSV_COLUMNS     = [COL_DATE, COL_COMPANY, COL_TITLE, COL_URL, COL_CONNECTIONS]
 
-# ── Company blacklist ──────────────────────────────────────────────────────────
-BLACKLIST = {
-    "moveo",
-    "moveo group",
-    "autofleet",
-    "gotfriends",
-    "sqlink",
-    "sqlink group",
-}
-
-# ── Title keyword blacklist ────────────────────────────────────────────────────
-TITLE_BLACKLIST = {
-    "qa",
-    "automation",
-    "quality assurance",
-    "technical lead",
-}
-
-# ── Skill blacklist ────────────────────────────────────────────────────────────
-# Each entry: (skill_name, max_years_or_None)
-#   None → skip if mentioned at all
-#   N    → skip only if more than N years required
-SKILL_BLACKLIST = [
-    ("WordPress", None),
-    ("PHP", None),
-    ("Python", 4),
-    ("C++", None),
-    ("C", None),
-]
+# ── Personal filters (loaded from config_local.py) ────────────────────────────
+# Copy config_local.example.py to config_local.py and fill in your own values.
+try:
+    from config_local import BLACKLIST, TITLE_BLACKLIST, SKILL_BLACKLIST  # type: ignore
+except ModuleNotFoundError:
+    BLACKLIST: set        = set()
+    TITLE_BLACKLIST: set  = set()
+    SKILL_BLACKLIST: list = []
